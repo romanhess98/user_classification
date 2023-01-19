@@ -137,9 +137,3 @@ df_brussels_nd_c.to_csv('data\\df_brussels_nd_c.csv', index=False)
 df_mesa_nd_c.to_csv('data\\df_mesa_nd_c.csv', index=False)
 df_quebec_nd_c.to_csv('data\\df_quebec_nd_c.csv', index=False)
 df_random_nd_c.to_csv('data\\df_random_nd_c.csv', index=False)
-
-#TODO upload repo to github
-
-
-
-
