@@ -16,7 +16,7 @@ import pandas as pd
 #os.chdir('C:\\Users\\roman\\PycharmProjects\\semester_3\\TwitterUserClassifier-master\\user_classification_transformer')
 
 # import dataset
-df = pd.read_csv('data\\df_raw.csv', encoding='latin-1')
+df = pd.read_csv('data/df_raw.csv', encoding='latin-1')
 
 # problematic encodings
 print("\nSome rows have problematic values. It seems there was something wrong with the encodings there")
@@ -106,7 +106,7 @@ def replace_duplicates_with_majority_case(dataframe: pd.DataFrame) -> pd.DataFra
     print(dataframe.shape)
     # for each duplicate
     # count the number of label=0 and label=1
-    prc = tmp.groupby(by=['description'], as_index=False).mean()
+    prc = tmp.groupby(by=['description'], as_index=False).mean(numeric_only=True)
 
     n_inconsistent=0
     for idx, rw in prc.iterrows():
