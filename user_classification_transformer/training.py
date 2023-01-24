@@ -147,7 +147,10 @@ def main(_):
         gpus=(1 if th.cuda.is_available() else 0),
         max_epochs=FLAGS.epochs,
         fast_dev_run=FLAGS.debug,
-        logger=pl.loggers.TensorBoardLogger('logs/', name='user_classification', version=0)
+        logger=pl.loggers.TensorBoardLogger('logs/',
+                                            name='user_classification',
+                                            version=0,
+                                            )
     )
     trainer.fit(model)
 
@@ -155,4 +158,10 @@ def main(_):
 if __name__ == '__main__':
     app.run(main)
 
-# TODO: in preparation, make labels to integers
+# TODO: implement this for cross validation and log accuracy, precision, recall, F1
+# TODO: make sure everything is logged correctly
+# TODO: find out maximum token number in all datasets, use this as maximum sequence length for all datasets
+# TODO: setup this on a server
+# TODO: make sure only top layers of model are retrained
+# TODO: How many epochs should I train for?
+#
