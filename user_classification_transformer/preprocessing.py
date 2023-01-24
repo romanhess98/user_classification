@@ -26,8 +26,12 @@ print(df.loc[[155, 939, 1330, 166, 2155]])
 df.columns = ['description', 'is_gen_pub', 'source']
 
 
+
 #remove rows with nan values
 df.dropna(inplace=True)
+
+#turn is_gen_pub column into int type
+df['is_gen_pub'] = df['is_gen_pub'].astype(int)
 
 # obtain all rows where 'description' is a duplicate
 df_duplicates = df[df.duplicated(['description'], keep=False)]
