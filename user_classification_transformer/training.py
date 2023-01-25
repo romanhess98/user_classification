@@ -17,17 +17,19 @@ from datasets import ClassLabel, Value
 
 import wandb
 from pytorch_lightning.loggers import WandbLogger
+from datetime import datetime
 
 
 flags.DEFINE_boolean('debug', False, '')
-flags.DEFINE_integer('epochs', 10, '')
-flags.DEFINE_integer('batch_size', 8, '')
-flags.DEFINE_float('lr', '1e-2', '')
+flags.DEFINE_integer('epochs', 3, '')
+flags.DEFINE_integer('batch_size', 10, '')
+flags.DEFINE_float('lr', '1e-3', '')
 flags.DEFINE_float('momentum', '.9', '')
 # flags.DEFINE_string('model', 'bert-base-uncased', '')
 flags.DEFINE_string('model', 'vinai/bertweet-base', '')
 flags.DEFINE_integer('seq_length', 20, '')
 flags.DEFINE_string('train_ds', 'default_train', '')
+flags.DEFINE_string('val_ds', 'default_val', '')
 flags.DEFINE_string('test_ds', 'default_test', '')
 
 FLAGS = flags.FLAGS
@@ -43,7 +45,6 @@ class UserClassifier(pl.LightningModule):
         self.model = transformers.RobertaForSequenceClassification.from_pretrained(FLAGS.model)
 
         self.save_hyperparameters()
-
 
         # Freeze the RoBERTa model
         for param in self.model.roberta.parameters():
@@ -82,7 +83,7 @@ class UserClassifier(pl.LightningModule):
             ds.set_format(type='torch', columns=['input_ids', 'is_gen_pub'])
             return ds
 
-        self.train_ds, self.test_ds = map(_prepare_ds, (FLAGS.train_ds, FLAGS.test_ds))
+        self.train_ds, self.val_ds, self.test_ds = map(_prepare_ds, (FLAGS.train_ds, FLAGS.val_ds, FLAGS.test_ds))
 
     def forward(self, input_ids):
         mask = (input_ids != 1).float()
@@ -106,32 +107,62 @@ class UserClassifier(pl.LightningModule):
         acc = acc.float()
         return {'loss': loss, 'acc': acc}
 
+
+    def test_step(self, batch, batch_idx):
+        logits = self.forward(batch['input_ids'])
+        labels = batch['is_gen_pub'].long()
+        loss = self.loss(logits, labels).mean()
+        acc = logits.argmax(-1) == labels
+        acc = acc.float()
+
+        return {'loss': loss, 'acc': acc}
+
+
     def validation_epoch_end(self, outputs):
         loss = th.cat([o['loss'] for o in outputs], 0).mean()
         acc = th.cat([o['acc'] for o in outputs], 0).mean()
         out = {'val_loss': loss, 'val_acc': acc}
+
+        self.log("val/loss_epoch", loss, on_step=False, on_epoch=True)
+        self.log("val/acc_epoch", acc, on_step=False, on_epoch=True)
+
+        return {**out, 'log': out}
+
+
+    def test_epoch_end(self, outputs):
+
+        loss = th.cat([o['loss'] for o in outputs], 0).mean()
+        acc = th.cat([o['acc'] for o in outputs], 0).mean()
+        out = {'test_loss': loss, 'test_acc': acc}
 
         self.log("test/loss_epoch", loss, on_step=False, on_epoch=True)
         self.log("test/acc_epoch", acc, on_step=False, on_epoch=True)
 
         return {**out, 'log': out}
 
+
     def train_dataloader(self):
         return th.utils.data.DataLoader(
             self.train_ds,
             batch_size=FLAGS.batch_size,
             drop_last=True,
-            shuffle=True,
-            num_workers=4
+            shuffle=True
         )
 
     def val_dataloader(self):
         return th.utils.data.DataLoader(
+            self.val_ds,
+            batch_size=FLAGS.batch_size,
+            drop_last=False,
+            shuffle=False
+        )
+
+    def test_dataloader(self):
+        return th.utils.data.DataLoader(
             self.test_ds,
             batch_size=FLAGS.batch_size,
             drop_last=False,
-            shuffle=False,
-            num_workers=4
+            shuffle=False
         )
 
     def configure_optimizers(self):
@@ -145,17 +176,21 @@ class UserClassifier(pl.LightningModule):
 def main(_):
     if FLAGS.train_ds == 'default_train':
         raise Exception("Please define the train dataset.")
+    elif FLAGS.val_ds == 'default_val':
+        raise Exception('Please define the validation dataset.')
     elif FLAGS.test_ds == 'default_test':
         raise Exception('Please define the test dataset.')
 
     model = UserClassifier()
 
-    #TO I need this? It said something about the dropout layers not being used otherwise
-    #model.train()
+    now = datetime.now()
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 
     wandb_logger = WandbLogger(project="cac",
-                               name=f"{FLAGS.train_ds}_{FLAGS.test_ds}",
+                               name=f"{FLAGS.train_ds}_{FLAGS.test_ds}_{dt_string}",
                                log_model=True)
+
+
 
     trainer = pl.Trainer(
         default_root_dir='logs',
@@ -164,7 +199,11 @@ def main(_):
         fast_dev_run=FLAGS.debug,
         logger=wandb_logger
     )
+
+
     trainer.fit(model)
+
+    wandb.finish()
 
 
 if __name__ == '__main__':
