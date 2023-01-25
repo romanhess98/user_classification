@@ -23,28 +23,32 @@ flags.DEFINE_float('momentum', '.9', '')
 # flags.DEFINE_string('model', 'bert-base-uncased', '')
 flags.DEFINE_string('model', 'vinai/bertweet-base', '')
 flags.DEFINE_integer('seq_length', 20, '')
+flags.DEFINE_string('train_dataset', 'default_train', '')
+flags.DEFINE_string('test_dataset', 'default_test', '')
 
 FLAGS = flags.FLAGS
 
 sh.rm('-r', '-f', 'logs')
 sh.mkdir('logs')
 
-
 # import IPython ; IPython.embed() ; exit(1)
-
 
 class UserClassifier(pl.LightningModule):
     def __init__(self):
         super().__init__()
-        self.model = transformers.AutoModelForSequenceClassification.from_pretrained(FLAGS.model)
+        self.model = transformers.RobertaForSequenceClassification.from_pretrained(FLAGS.model)
+
+        # Freeze the RoBERTa model
+        for param in self.model.roberta.parameters():
+            param.requires_grad = False
+
+        # Unfreeze the classifier
+        for param in self.model.classifier.parameters():
+            param.requires_grad = True
+
         self.loss = th.nn.CrossEntropyLoss(reduction='none')
 
     def prepare_data(self):
-        # train_ds_old = nlp.load_dataset('imdb',
-        #                                split='train[:5%]')
-
-        # TODO: possible problem here, is_gen_pub is not type classLabel for some reason. Might cause problems later
-
         tokenizer = transformers.AutoTokenizer.from_pretrained(FLAGS.model, use_fast=False)
 
         def _tokenize(x):
@@ -55,35 +59,25 @@ class UserClassifier(pl.LightningModule):
                 truncation=True)
             return x
 
-        def _prepare_ds(split, k=0):
-            if split == 'train':
-                ds = nlp.load_dataset('csv',
-                                      data_files='data/df_boston.csv',
-                                      features=nlp.Features({'description': Value('string'),
-                                                             'is_gen_pub': ClassLabel(num_classes=2),
-                                                             'source': Value('string')}
-                                                            ),
-                                      split=f'train[:{k}%]+train[{k + 10}%:]'
-                                      )
-            elif split == 'val':
-                ds = nlp.load_dataset('csv',
-                                      data_files='data/df_boston.csv',
-                                      features=nlp.Features({'description': Value('string'),
-                                                             'is_gen_pub': ClassLabel(num_classes=2),
-                                                             'source': Value('string')}
-                                                            ),
-                                      split=f'train[{k}%:{k + 10}%]')
+        def _prepare_ds(dataset_name):
+            path = f'data/{dataset_name}.csv'
+
+            ds = nlp.load_dataset('csv',
+                                  data_files=path,
+                                  features=nlp.Features({'description': Value('string'),
+                                                         'is_gen_pub': ClassLabel(num_classes=2),
+                                                         'source': Value('string')}
+                                                        ),
+                                  split='train[:100%]'
+                                  )
 
             ds = ds.map(_tokenize)
             ds.set_format(type='torch', columns=['input_ids', 'is_gen_pub'])
             return ds
 
-        self.train_ds, self.val_ds = map(_prepare_ds, ('train', 'val'))
-
-        # TODO: could later pass k as a parameter here and always return two datasets by default
+        self.train_ds, self.test_ds = map(_prepare_ds, (FLAGS.train_dataset, FLAGS.test_dataset))
 
     def forward(self, input_ids):
-        # TODO: check how mask looks. Should be 0 for all padding tokens.
         mask = (input_ids != 1).float()
         logits = self.model(input_ids, mask).logits
         return logits
@@ -126,7 +120,7 @@ class UserClassifier(pl.LightningModule):
 
     def val_dataloader(self):
         return th.utils.data.DataLoader(
-            self.val_ds,
+            self.test_ds,
             batch_size=FLAGS.batch_size,
             drop_last=False,
             shuffle=False
@@ -141,7 +135,16 @@ class UserClassifier(pl.LightningModule):
 
 
 def main(_):
+    if FLAGS.train_dataset == 'default_train':
+        raise Exception("Please define the train dataset.")
+    elif FLAGS.test_dataset == 'default_test':
+        raise Exception('Please define the test dataset.')
+
     model = UserClassifier()
+
+    #TO I need this? It said something about the dropout layers not being used otherwise
+    #model.train()
+
     trainer = pl.Trainer(
         default_root_dir='logs',
         gpus=(1 if th.cuda.is_available() else 0),
@@ -158,10 +161,32 @@ def main(_):
 if __name__ == '__main__':
     app.run(main)
 
-# TODO: implement this for cross validation and log accuracy, precision, recall, F1
+# TODO: log accuracy, precision, recall, F1
 # TODO: make sure everything is logged correctly
 # TODO: find out maximum token number in all datasets, use this as maximum sequence length for all datasets
-# TODO: setup this on a server
-# TODO: make sure only top layers of model are retrained
+# TODO: setup this on a server (maybe not necessary due to short training times when only fine tuning classification head)
 # TODO: How many epochs should I train for?
-#
+
+'''
+# Improvement Ideas:
+# fine tune newly added special tokens.
+
+In the Hugging Face transformers library, you can use the torch.nn.Embedding.from_pretrained() method to create an embedding layer with pre-trained weights, and then set the requires_grad attribute to False for the pre-trained weights while keeping it True for the newly added special token embeddings.
+
+Here is an example on how to do this:
+
+# Load pre-trained embeddings
+embeddings = torch.nn.Embedding.from_pretrained(weights)
+
+# Freeze pre-trained embeddings
+embeddings.weight.requires_grad = False
+
+# Add new special tokens to vocabulary
+num_added_tokens = tokenizer.add_tokens(new_special_tokens)
+
+# Fine-tune embeddings for new special tokens
+embeddings.weight.data[-num_added_tokens:, :].requires_grad = True
+
+This way, the pre-trained embeddings will not be fine-tuned during training, but the embeddings for the newly added special tokens will be fine-tuned.
+
+'''

@@ -33,6 +33,9 @@ df.dropna(inplace=True)
 #turn is_gen_pub column into int type
 df['is_gen_pub'] = df['is_gen_pub'].astype(int)
 
+#replace all links (starting with "https") in the description columns with "http"
+df['description'] = df['description'].str.replace(r'http\S+', 'http', regex=True)
+
 # obtain all rows where 'description' is a duplicate
 df_duplicates = df[df.duplicated(['description'], keep=False)]
 
@@ -81,12 +84,53 @@ df_mesa = df[df['source'] == 'Mesa Shooting']
 df_quebec = df[df['source'] == 'Quebec Mosque Shooting']
 df_random = df[df['source'] == 'Random Samples']
 
+
+# randomly shuffle each dataset
+df_boston = df_boston.sample(frac=1, random_state=42).reset_index(drop=True)
+df_brussels = df_brussels.sample(frac=1, random_state=42).reset_index(drop=True)
+df_mesa = df_mesa.sample(frac=1, random_state=42).reset_index(drop=True)
+df_quebec = df_quebec.sample(frac=1, random_state=42).reset_index(drop=True)
+df_random = df_random.sample(frac=1, random_state=42).reset_index(drop=True)
+
+# split each dataset into a train and test set
+df_boston_train = df_boston.iloc[:int(0.8*len(df_boston))]
+df_boston_test = df_boston.iloc[int(0.8*len(df_boston)):]
+
+df_brussels_train = df_brussels.iloc[:int(0.8*len(df_brussels))]
+df_brussels_test = df_brussels.iloc[int(0.8*len(df_brussels)):]
+
+df_mesa_train = df_mesa.iloc[:int(0.8*len(df_mesa))]
+df_mesa_test = df_mesa.iloc[int(0.8*len(df_mesa)):]
+
+df_quebec_train = df_quebec.iloc[:int(0.8*len(df_quebec))]
+df_quebec_test = df_quebec.iloc[int(0.8*len(df_quebec)):]
+
+df_random_train = df_random.iloc[:int(0.8*len(df_random))]
+df_random_test = df_random.iloc[int(0.8*len(df_random)):]
+
 # store them as csv files
-df_boston.to_csv('data\\df_boston.csv', index=False)
-df_brussels.to_csv('data\\df_brussels.csv', index=False)
-df_mesa.to_csv('data\\df_mesa.csv', index=False)
-df_quebec.to_csv('data\\df_quebec.csv', index=False)
-df_random.to_csv('data\\df_random.csv', index=False)
+df_boston.to_csv('data/df_boston.csv', index=False)
+df_brussels.to_csv('data/df_brussels.csv', index=False)
+df_mesa.to_csv('data/df_mesa.csv', index=False)
+df_quebec.to_csv('data/df_quebec.csv', index=False)
+df_random.to_csv('data/df_random.csv', index=False)
+
+df_boston_train.to_csv('data/df_boston_train.csv', index=False)
+df_boston_test.to_csv('data/df_boston_test.csv', index=False)
+
+df_brussels_train.to_csv('data/df_brussels_train.csv', index=False)
+df_brussels_test.to_csv('data/df_brussels_test.csv', index=False)
+
+df_mesa_train.to_csv('data/df_mesa_train.csv', index=False)
+df_mesa_test.to_csv('data/df_mesa_test.csv', index=False)
+
+df_quebec_train.to_csv('data/df_quebec_train.csv', index=False)
+df_quebec_test.to_csv('data/df_quebec_test.csv', index=False)
+
+df_random_train.to_csv('data/df_random_train.csv', index=False)
+df_random_test.to_csv('data/df_random_test.csv', index=False)
+
+
 
 
 
@@ -135,9 +179,43 @@ df_mesa_nd_c = replace_duplicates_with_majority_case(df_mesa.copy())
 df_quebec_nd_c = replace_duplicates_with_majority_case(df_quebec.copy())
 df_random_nd_c = replace_duplicates_with_majority_case(df_random.copy())
 
+# split them into a train and test set
+df_boston_nd_c_train = df_boston_nd_c.iloc[:int(0.8*len(df_boston_nd_c))]
+df_boston_nd_c_test = df_boston_nd_c.iloc[int(0.8*len(df_boston_nd_c)):]
+
+df_brussels_nd_c_train = df_brussels_nd_c.iloc[:int(0.8*len(df_brussels_nd_c))]
+df_brussels_nd_c_test = df_brussels_nd_c.iloc[int(0.8*len(df_brussels_nd_c)):]
+
+df_mesa_nd_c_train = df_mesa_nd_c.iloc[:int(0.8*len(df_mesa_nd_c))]
+df_mesa_nd_c_test = df_mesa_nd_c.iloc[int(0.8*len(df_mesa_nd_c)):]
+
+df_quebec_nd_c_train = df_quebec_nd_c.iloc[:int(0.8*len(df_quebec_nd_c))]
+df_quebec_nd_c_test = df_quebec_nd_c.iloc[int(0.8*len(df_quebec_nd_c)):]
+
+df_random_nd_c_train = df_random_nd_c.iloc[:int(0.8*len(df_random_nd_c))]
+df_random_nd_c_test = df_random_nd_c.iloc[int(0.8*len(df_random_nd_c)):]
+
+
+
 # store them as csv files
-df_boston_nd_c.to_csv('data\\df_boston_nd_c.csv', index=False)
-df_brussels_nd_c.to_csv('data\\df_brussels_nd_c.csv', index=False)
-df_mesa_nd_c.to_csv('data\\df_mesa_nd_c.csv', index=False)
-df_quebec_nd_c.to_csv('data\\df_quebec_nd_c.csv', index=False)
-df_random_nd_c.to_csv('data\\df_random_nd_c.csv', index=False)
+df_boston_nd_c.to_csv('data/df_boston_nd_c.csv', index=False)
+df_brussels_nd_c.to_csv('data/df_brussels_nd_c.csv', index=False)
+df_mesa_nd_c.to_csv('data/df_mesa_nd_c.csv', index=False)
+df_quebec_nd_c.to_csv('data/df_quebec_nd_c.csv', index=False)
+df_random_nd_c.to_csv('data/df_random_nd_c.csv', index=False)
+
+df_boston_nd_c_train.to_csv('data/df_boston_nd_c_train.csv', index=False)
+df_boston_nd_c_test.to_csv('data/df_boston_nd_c_test.csv', index=False)
+
+df_brussels_nd_c_train.to_csv('data/df_brussels_nd_c_train.csv', index=False)
+df_brussels_nd_c_test.to_csv('data/df_brussels_nd_c_test.csv', index=False)
+
+df_mesa_nd_c_train.to_csv('data/df_mesa_nd_c_train.csv', index=False)
+df_mesa_nd_c_test.to_csv('data/df_mesa_nd_c_test.csv', index=False)
+
+df_quebec_nd_c_train.to_csv('data/df_quebec_nd_c_train.csv', index=False)
+df_quebec_nd_c_test.to_csv('data/df_quebec_nd_c_test.csv', index=False)
+
+df_random_nd_c_train.to_csv('data/df_random_nd_c_train.csv', index=False)
+df_random_nd_c_test.to_csv('data/df_random_nd_c_test.csv', index=False)
+
