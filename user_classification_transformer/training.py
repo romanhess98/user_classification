@@ -15,6 +15,10 @@ import nlp
 import transformers
 from datasets import ClassLabel, Value
 
+import wandb
+from pytorch_lightning.loggers import WandbLogger
+
+
 flags.DEFINE_boolean('debug', False, '')
 flags.DEFINE_integer('epochs', 10, '')
 flags.DEFINE_integer('batch_size', 8, '')
@@ -23,8 +27,8 @@ flags.DEFINE_float('momentum', '.9', '')
 # flags.DEFINE_string('model', 'bert-base-uncased', '')
 flags.DEFINE_string('model', 'vinai/bertweet-base', '')
 flags.DEFINE_integer('seq_length', 20, '')
-flags.DEFINE_string('train_dataset', 'default_train', '')
-flags.DEFINE_string('test_dataset', 'default_test', '')
+flags.DEFINE_string('train_ds', 'default_train', '')
+flags.DEFINE_string('test_ds', 'default_test', '')
 
 FLAGS = flags.FLAGS
 
@@ -37,6 +41,9 @@ class UserClassifier(pl.LightningModule):
     def __init__(self):
         super().__init__()
         self.model = transformers.RobertaForSequenceClassification.from_pretrained(FLAGS.model)
+
+        self.save_hyperparameters()
+
 
         # Freeze the RoBERTa model
         for param in self.model.roberta.parameters():
@@ -75,7 +82,7 @@ class UserClassifier(pl.LightningModule):
             ds.set_format(type='torch', columns=['input_ids', 'is_gen_pub'])
             return ds
 
-        self.train_ds, self.test_ds = map(_prepare_ds, (FLAGS.train_dataset, FLAGS.test_dataset))
+        self.train_ds, self.test_ds = map(_prepare_ds, (FLAGS.train_ds, FLAGS.test_ds))
 
     def forward(self, input_ids):
         mask = (input_ids != 1).float()
@@ -87,12 +94,7 @@ class UserClassifier(pl.LightningModule):
         labels = batch['is_gen_pub'].long()
         loss = self.loss(logits, labels).mean()
 
-        self.log("train_loss",
-                 loss,
-                 on_step=True,
-                 on_epoch=True,
-                 prog_bar=True,
-                 logger=True)
+        self.log("train/loss", loss, on_step= False, on_epoch=True)
 
         return {'loss': loss, 'log': {'train_loss': loss}}
 
@@ -108,6 +110,10 @@ class UserClassifier(pl.LightningModule):
         loss = th.cat([o['loss'] for o in outputs], 0).mean()
         acc = th.cat([o['acc'] for o in outputs], 0).mean()
         out = {'val_loss': loss, 'val_acc': acc}
+
+        self.log("test/loss_epoch", loss, on_step=False, on_epoch=True)
+        self.log("test/acc_epoch", acc, on_step=False, on_epoch=True)
+
         return {**out, 'log': out}
 
     def train_dataloader(self):
@@ -115,7 +121,8 @@ class UserClassifier(pl.LightningModule):
             self.train_ds,
             batch_size=FLAGS.batch_size,
             drop_last=True,
-            shuffle=True
+            shuffle=True,
+            num_workers=4
         )
 
     def val_dataloader(self):
@@ -123,7 +130,8 @@ class UserClassifier(pl.LightningModule):
             self.test_ds,
             batch_size=FLAGS.batch_size,
             drop_last=False,
-            shuffle=False
+            shuffle=False,
+            num_workers=4
         )
 
     def configure_optimizers(self):
@@ -135,9 +143,9 @@ class UserClassifier(pl.LightningModule):
 
 
 def main(_):
-    if FLAGS.train_dataset == 'default_train':
+    if FLAGS.train_ds == 'default_train':
         raise Exception("Please define the train dataset.")
-    elif FLAGS.test_dataset == 'default_test':
+    elif FLAGS.test_ds == 'default_test':
         raise Exception('Please define the test dataset.')
 
     model = UserClassifier()
@@ -145,15 +153,16 @@ def main(_):
     #TO I need this? It said something about the dropout layers not being used otherwise
     #model.train()
 
+    wandb_logger = WandbLogger(project="cac",
+                               name=f"{FLAGS.train_ds}_{FLAGS.test_ds}",
+                               log_model=True)
+
     trainer = pl.Trainer(
         default_root_dir='logs',
         gpus=(1 if th.cuda.is_available() else 0),
         max_epochs=FLAGS.epochs,
         fast_dev_run=FLAGS.debug,
-        logger=pl.loggers.TensorBoardLogger('logs/',
-                                            name='user_classification',
-                                            version=0,
-                                            )
+        logger=wandb_logger
     )
     trainer.fit(model)
 
