@@ -105,6 +105,8 @@ class UserClassifier(pl.LightningModule):
 
         return {'loss': loss, 'log': {'train_loss': loss}}
 
+
+
     def validation_step(self, batch, batch_idx):
         logits = self.forward(batch['input_ids'])
         labels = batch['is_gen_pub'].long()
@@ -124,19 +126,46 @@ class UserClassifier(pl.LightningModule):
         loss = self.loss(logits, labels)
         acc = logits.argmax(-1) == labels
         acc = acc.float()
+        #print('acc: ', acc)
+
+        tp = (logits.argmax(-1) == labels) & (labels == 1)
+        tp = tp.float()
+        #print('true_positive: ', tp)
+
+        tn = (logits.argmax(-1) == labels) & (labels == 0)
+        tn = tn.float()
+        #print('true_negative: ', tn)
+
+        fp = (logits.argmax(-1) != labels) & (labels == 0)
+        fp = fp.float()
+        #print('false_positive: ', fp)
+
+        fn = (logits.argmax(-1) != labels) & (labels == 1)
+        fn = fn.float()
+        #print('false_negative: ', fn)
+
 
         #self.log("test/loss_epoch", loss.mean())
         #self.log("test/acc_epoch", acc.mean())
 
 
-        return {'loss': loss, 'acc': acc}
+        return {'loss': loss,
+                'acc': acc,
+                'tp': tp,
+                'tn': tn,
+                'fp': fp,
+                'fn': fn}
 
 
     def validation_epoch_end(self, outputs):
 
         loss = th.cat([o['loss'] for o in outputs], 0).mean()
         acc = th.cat([o['acc'] for o in outputs], 0).mean()
+
+
+
         out = {'val_loss': loss, 'val_acc': acc}
+
 
         self.logger.experiment.add_scalar("Val/Loss",
                                          loss,
@@ -152,10 +181,24 @@ class UserClassifier(pl.LightningModule):
         print("Reached test_epoch_end)")
         loss = th.cat([o['loss'] for o in outputs], 0).mean()
         acc = th.cat([o['acc'] for o in outputs], 0).mean()
-        out = {'test_loss': loss, 'test_acc': acc}
-        print('loss', loss)
-        print('acc', acc)
-        print("out: ", out)
+
+        tp = th.cat([o['tp'] for o in outputs], 0).sum()
+        tn = th.cat([o['tn'] for o in outputs], 0).sum()
+        fp = th.cat([o['fp'] for o in outputs], 0).sum()
+        fn = th.cat([o['fn'] for o in outputs], 0).sum()
+
+        precision = tp / (tp + fp)
+        recall = tp / (tp + fn)
+        f1 = 2 * (precision * recall) / (precision + recall)
+
+
+
+        out = {'test_loss': loss,
+               'test_acc': acc,
+               'precision': precision,
+               'recall': recall,
+               'f1': f1}
+
 
         self.logger.experiment.add_scalar("Test/Loss",
                                           loss,
@@ -164,6 +207,18 @@ class UserClassifier(pl.LightningModule):
         self.logger.experiment.add_scalar("Test/Acc",
                                           acc,
                                           self.current_epoch)
+
+        self.logger.experiment.add_scalar("Test/Precision",
+                                            precision,
+                                            self.current_epoch)
+
+        self.logger.experiment.add_scalar("Test/Recall",
+                                            recall,
+                                            self.current_epoch)
+
+        self.logger.experiment.add_scalar("Test/F1",
+                                            f1,
+                                            self.current_epoch)
 
         return {**out, 'log': out}
 
@@ -239,11 +294,12 @@ def main(_):
 if __name__ == '__main__':
     app.run(main)
 
-# TODO: log accuracy, precision, recall, F1
+# TODO: log precision, recall, F1
 # TODO: make sure everything is logged correctly
 # TODO: find out maximum token number in all datasets, use this as maximum sequence length for all datasets
 # TODO: setup this on a server (maybe not necessary due to short training times when only fine tuning classification head)
-# TODO: How many epochs should I train for?
+# TODO: How many epochs should I train for? --> Early stopping, then use best run for testing.
+# TODO: implement hyperparameter tuning
 
 '''
 # Improvement Ideas:
