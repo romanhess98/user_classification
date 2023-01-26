@@ -17,8 +17,10 @@ from datasets import ClassLabel, Value
 
 import wandb
 from pytorch_lightning.loggers import WandbLogger
-from datetime import datetime
+from pytorch_lightning.loggers import TensorBoardLogger
 
+from datetime import datetime
+import time
 
 flags.DEFINE_boolean('debug', False, '')
 flags.DEFINE_integer('epochs', 3, '')
@@ -27,7 +29,7 @@ flags.DEFINE_float('lr', '1e-3', '')
 flags.DEFINE_float('momentum', '.9', '')
 # flags.DEFINE_string('model', 'bert-base-uncased', '')
 flags.DEFINE_string('model', 'vinai/bertweet-base', '')
-flags.DEFINE_integer('seq_length', 20, '')
+flags.DEFINE_integer('seq_length', 10, '')
 flags.DEFINE_string('train_ds', 'default_train', '')
 flags.DEFINE_string('val_ds', 'default_val', '')
 flags.DEFINE_string('test_ds', 'default_test', '')
@@ -95,7 +97,11 @@ class UserClassifier(pl.LightningModule):
         labels = batch['is_gen_pub'].long()
         loss = self.loss(logits, labels).mean()
 
-        self.log("train/loss", loss, on_step= False, on_epoch=True)
+        #self.log("train/loss", loss, on_step=False, on_epoch=True)
+        self.logger.experiment.add_scalar("Train/Loss",
+                                          loss,
+                                          self.current_epoch)
+
 
         return {'loss': loss, 'log': {'train_loss': loss}}
 
@@ -105,38 +111,59 @@ class UserClassifier(pl.LightningModule):
         loss = self.loss(logits, labels)
         acc = logits.argmax(-1) == labels
         acc = acc.float()
-        return {'loss': loss, 'acc': acc}
+
+        #self.log("val/loss_epoch", loss.mean(), on_step=False, on_epoch=True)
+        #self.log("val/acc_epoch", acc.mean(), on_step=False, on_epoch=True)
+
+        return {'loss': loss, 'acc': acc, }
 
 
     def test_step(self, batch, batch_idx):
         logits = self.forward(batch['input_ids'])
         labels = batch['is_gen_pub'].long()
-        loss = self.loss(logits, labels).mean()
+        loss = self.loss(logits, labels)
         acc = logits.argmax(-1) == labels
         acc = acc.float()
+
+        #self.log("test/loss_epoch", loss.mean())
+        #self.log("test/acc_epoch", acc.mean())
+
 
         return {'loss': loss, 'acc': acc}
 
 
     def validation_epoch_end(self, outputs):
+
         loss = th.cat([o['loss'] for o in outputs], 0).mean()
         acc = th.cat([o['acc'] for o in outputs], 0).mean()
         out = {'val_loss': loss, 'val_acc': acc}
 
-        self.log("val/loss_epoch", loss, on_step=False, on_epoch=True)
-        self.log("val/acc_epoch", acc, on_step=False, on_epoch=True)
+        self.logger.experiment.add_scalar("Val/Loss",
+                                         loss,
+                                         self.current_epoch)
+
+        self.logger.experiment.add_scalar("Val/Acc",
+                                          acc,
+                                          self.current_epoch)
 
         return {**out, 'log': out}
 
-
     def test_epoch_end(self, outputs):
-
+        print("Reached test_epoch_end)")
         loss = th.cat([o['loss'] for o in outputs], 0).mean()
         acc = th.cat([o['acc'] for o in outputs], 0).mean()
         out = {'test_loss': loss, 'test_acc': acc}
+        print('loss', loss)
+        print('acc', acc)
+        print("out: ", out)
 
-        self.log("test/loss_epoch", loss, on_step=False, on_epoch=True)
-        self.log("test/acc_epoch", acc, on_step=False, on_epoch=True)
+        self.logger.experiment.add_scalar("Test/Loss",
+                                          loss,
+                                          self.current_epoch)
+
+        self.logger.experiment.add_scalar("Test/Acc",
+                                          acc,
+                                          self.current_epoch)
 
         return {**out, 'log': out}
 
@@ -145,7 +172,7 @@ class UserClassifier(pl.LightningModule):
         return th.utils.data.DataLoader(
             self.train_ds,
             batch_size=FLAGS.batch_size,
-            drop_last=True,
+            drop_last=False,
             shuffle=True
         )
 
@@ -185,25 +212,28 @@ def main(_):
 
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    print(dt_string)
+    #wandb_logger = WandbLogger(project="cac",
+    #                           name=f"{FLAGS.train_ds}_{FLAGS.test_ds}_{dt_string}",
+    #                           log_model=True)
 
-    wandb_logger = WandbLogger(project="cac",
-                               name=f"{FLAGS.train_ds}_{FLAGS.test_ds}_{dt_string}",
-                               log_model=True)
-
-
+    tb_logger = TensorBoardLogger('tb_logs/',
+                                  name=f"{FLAGS.train_ds}_{FLAGS.test_ds}_{dt_string}",
+                                  version=0
+                                  )
 
     trainer = pl.Trainer(
         default_root_dir='logs',
         gpus=(1 if th.cuda.is_available() else 0),
         max_epochs=FLAGS.epochs,
         fast_dev_run=FLAGS.debug,
-        logger=wandb_logger
+        logger=tb_logger
     )
 
-
     trainer.fit(model)
+    trainer.test(ckpt_path='best')
 
-    wandb.finish()
+    #wandb.finish()
 
 
 if __name__ == '__main__':
