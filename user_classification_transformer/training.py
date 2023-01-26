@@ -63,13 +63,13 @@ class UserClassifier(pl.LightningModule):
 
 
     def prepare_data(self):
-        tokenizer = transformers.AutoTokenizer.from_pretrained(FLAGS.model, use_fast=False)
+        tokenizer = transformers.AutoTokenizer.from_pretrained(FLAGS.model)
 
         def _tokenize(x):
             x['input_ids'] = tokenizer.encode(
                 x['description'],
                 max_length=FLAGS.seq_length,
-                padding='do_not_pad',
+                padding='max_length',
                 truncation=True)
 
             #self.token_lengths[len(x['input_ids'])] += 1
@@ -233,7 +233,7 @@ class UserClassifier(pl.LightningModule):
         return th.utils.data.DataLoader(
             self.train_ds,
             batch_size=FLAGS.batch_size,
-            drop_last=False,
+            drop_last=True,
             shuffle=True
         )
 
@@ -242,7 +242,7 @@ class UserClassifier(pl.LightningModule):
             self.val_ds,
             batch_size=FLAGS.batch_size,
             drop_last=False,
-            shuffle=False
+            shuffle=True
         )
 
     def test_dataloader(self):
@@ -250,7 +250,7 @@ class UserClassifier(pl.LightningModule):
             self.test_ds,
             batch_size=FLAGS.batch_size,
             drop_last=False,
-            shuffle=False
+            shuffle=True
         )
 
     def configure_optimizers(self):
