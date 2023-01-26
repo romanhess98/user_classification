@@ -29,7 +29,7 @@ flags.DEFINE_float('lr', '1e-3', '')
 flags.DEFINE_float('momentum', '.9', '')
 # flags.DEFINE_string('model', 'bert-base-uncased', '')
 flags.DEFINE_string('model', 'vinai/bertweet-base', '')
-flags.DEFINE_integer('seq_length', 10, '')
+flags.DEFINE_integer('seq_length', 200, '')
 flags.DEFINE_string('train_ds', 'default_train', '')
 flags.DEFINE_string('val_ds', 'default_val', '')
 flags.DEFINE_string('test_ds', 'default_test', '')
@@ -58,6 +58,10 @@ class UserClassifier(pl.LightningModule):
 
         self.loss = th.nn.CrossEntropyLoss(reduction='none')
 
+        # define an empty array in which to store the frequency of token lengths
+        #self.token_lengths = [0] * 500
+
+
     def prepare_data(self):
         tokenizer = transformers.AutoTokenizer.from_pretrained(FLAGS.model, use_fast=False)
 
@@ -65,8 +69,10 @@ class UserClassifier(pl.LightningModule):
             x['input_ids'] = tokenizer.encode(
                 x['description'],
                 max_length=FLAGS.seq_length,
-                padding='max_length',
+                padding='do_not_pad',
                 truncation=True)
+
+            #self.token_lengths[len(x['input_ids'])] += 1
             return x
 
         def _prepare_ds(dataset_name):
@@ -286,6 +292,7 @@ def main(_):
     )
 
     trainer.fit(model)
+
     trainer.test(ckpt_path='best')
 
     #wandb.finish()
@@ -294,12 +301,12 @@ def main(_):
 if __name__ == '__main__':
     app.run(main)
 
-# TODO: log precision, recall, F1
-# TODO: make sure everything is logged correctly
-# TODO: find out maximum token number in all datasets, use this as maximum sequence length for all datasets
-# TODO: setup this on a server (maybe not necessary due to short training times when only fine tuning classification head)
-# TODO: How many epochs should I train for? --> Early stopping, then use best run for testing.
-# TODO: implement hyperparameter tuning
+
+
+# TODO: Optional: setup this on a server (maybe not necessary due to short training times when only fine tuning classification head)
+# How many epochs should I train for? --> Early stopping, then use best run for testing.
+# TODO: Implement early stopping
+# TODO: implement hyperparameter tuning while training(?)
 
 '''
 # Improvement Ideas:

@@ -62,6 +62,8 @@ print(f"\nThere are {len(uniques)} unique descriptions with contradicting labels
 for i in uniques:
     print("    ", i)
 
+
+
 """
 with some of these bio texts, it is highly unlikely that they belong to different individuals. 
 The authors did not specify how they treated these cases. We will run our analyses on two different datasets:
@@ -75,6 +77,23 @@ can lead to inconsistencies.
 
 Our assumption is that the majority label is the correct one.
 """
+
+#randomly shuffle the dataset
+df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+
+# store the whole dataset as a csv
+df.to_csv('data/df_all.csv', index=False)
+
+# split the dataset into train, val and test
+df_train = df.iloc[:int(0.7*len(df))]
+df_val = df.iloc[int(0.7*len(df)):int(0.8*len(df))]
+df_test = df.iloc[int(0.8*len(df)):]
+
+#store the train, val and test set as csv
+df_train.to_csv('data/df_all_train.csv', index=False)
+df_val.to_csv('data/df_all_val.csv', index=False)
+df_test.to_csv('data/df_all_test.csv', index=False)
+
 
 
 # split up the dataset into 4 individual ones based on the source
