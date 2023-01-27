@@ -28,6 +28,7 @@ import warnings
 warnings.filterwarnings("ignore", category=LightningDeprecationWarning)
 
 flags.DEFINE_boolean('debug', False, '')
+#TODO: set number of epochs
 flags.DEFINE_integer('epochs', 3, '')
 #flags.DEFINE_integer('batch_size', 10, '')
 #flags.DEFINE_float('lr', '1e-3', '')
@@ -38,6 +39,7 @@ flags.DEFINE_string('model', 'vinai/bertweet-base', '')
 flags.DEFINE_string('train_ds', 'df_all_train', '')
 flags.DEFINE_string('val_ds', 'df_all_val', '')
 flags.DEFINE_string('test_ds', 'df_all_test', '')
+flags.DEFINE_string('mode', 'default_mode', '')
 
 FLAGS = flags.FLAGS
 
@@ -333,14 +335,13 @@ def objective(trial: optuna.Trial):
         lr=lr,
         momentum=momentum,
         batch_size=batch_size,
-        seq_length=100
+        seq_length=128
     )
 
     trainer.logger.log_hyperparams({
         "lr": lr,
         "momentum": momentum,
-        "batch_size": batch_size,
-        "seq_length": 100
+        "batch_size": batch_size
     })
 
     trainer.fit(model)
@@ -357,53 +358,60 @@ def main(_):
         raise Exception('Please define the validation dataset.')
     elif FLAGS.test_ds == 'default_test':
         raise Exception('Please define the test dataset.')
-
-    # training and optimization
-
-    pruner = optuna.pruners.HyperbandPruner(3, 30, 2)
-    study = optuna.create_study(direction="minimize", pruner=pruner)
-    study.optimize(objective, n_trials=6)
-
-    print("Number of finished trials: {}".format(len(study.trials)))
-    print("Best trial:")
-    trial = study.best_trial
-    print("  Value: {}".format(trial.value))
-
-    print("  Params: ")
-    for key, value in trial.params.items():
-        print("    {}: {}".format(key, value))
+    elif FLAGS.mode == 'default_mode':
+        raise Exception('Please define the mode.')
 
 
-    '''
-    model = UserClassifier()
+    if FLAGS.mode =='train':
+        # training and optimization
+        pruner = optuna.pruners.HyperbandPruner(3, 30, 2)
+        study = optuna.create_study(direction="minimize", pruner=pruner)
+        study.optimize(objective, n_trials=6)
 
-    now = datetime.now()
-    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    print(dt_string)
-    #wandb_logger = WandbLogger(project="cac",
-    #                           name=f"{FLAGS.train_ds}_{FLAGS.test_ds}_{dt_string}",
-    #                           log_model=True)
+        print("Number of finished trials: {}".format(len(study.trials)))
+        print("Best trial:")
+        trial = study.best_trial
+        print("  Value: {}".format(trial.value))
 
-    tb_logger = TensorBoardLogger('tb_logs/',
-                                  name=f"{FLAGS.train_ds}_{FLAGS.test_ds}_{dt_string}",
-                                  version=0
-                                  )
+        print("  Params: ")
+        for key, value in trial.params.items():
+            print("    {}: {}".format(key, value))
 
-    trainer = pl.Trainer(
-        default_root_dir='logs',
-        gpus=(1 if th.cuda.is_available() else 0),
-        max_epochs=FLAGS.epochs,
-        fast_dev_run=FLAGS.debug,
-        logger=tb_logger
-    )
+    elif FLAGS.mode == 'test':
 
-    trainer.fit(model)
+        lr=1e-5
+        momentum=0.9
+        batch_size=10
+        seq_length=128
 
-    trainer.test(ckpt_path='best')
+        model = UserClassifier(
+            lr=lr,
+            momentum=momentum,
+            batch_size=batch_size,
+            seq_length=seq_length
+        )
 
-    #wandb.finish()
-    
-    '''
+        now = datetime.now()
+        dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+        print(dt_string)
+
+        tb_logger = TensorBoardLogger('tb_logs/',
+                                      name=f"{FLAGS.train_ds}_{FLAGS.test_ds}_{dt_string}",
+                                      version=0
+                                      )
+
+        trainer = pl.Trainer(
+            default_root_dir='logs',
+            gpus=(1 if th.cuda.is_available() else 0),
+            max_epochs=FLAGS.epochs,
+            fast_dev_run=FLAGS.debug,
+            logger=tb_logger
+        )
+
+        trainer.fit(model)
+
+        trainer.test(ckpt_path='best')
+
 
 
 if __name__ == '__main__':
