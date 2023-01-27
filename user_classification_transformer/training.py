@@ -14,6 +14,7 @@ import pytorch_lightning as pl
 import nlp
 import transformers
 from pytorch_lightning.utilities.warnings import LightningDeprecationWarning
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from transformers import RobertaForSequenceClassification
 from datasets import ClassLabel, Value
 
@@ -25,7 +26,10 @@ from datetime import datetime
 import optuna
 import warnings
 
+
+
 warnings.filterwarnings("ignore", category=LightningDeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 flags.DEFINE_boolean('debug', False, '')
 #TODO: set number of epochs
@@ -40,6 +44,7 @@ flags.DEFINE_string('train_ds', 'df_all_train', '')
 flags.DEFINE_string('val_ds', 'df_all_val', '')
 flags.DEFINE_string('test_ds', 'df_all_test', '')
 flags.DEFINE_string('mode', 'default_mode', '')
+
 
 FLAGS = flags.FLAGS
 
@@ -66,11 +71,14 @@ class UserClassifier(pl.LightningModule):
         #print(my_vocab_size)
 
 
-        self.model = transformers.RobertaForSequenceClassification.from_pretrained(pretrained_model_name_or_path=FLAGS.model)
-        #self.model = transformers.RobertaForSequenceClassification.from_pretrained('roberta-base')
+        self.pretrained_model = transformers.AutoModel.from_pretrained(pretrained_model_name_or_path=FLAGS.model)
 
+        self.classifier = th.nn.Sequential(th.nn.Linear(self.pretrained_model.pooler.dense.out_features, 2))
+
+        #self.model = transformers.RobertaForSequenceClassification.from_pretrained('roberta-base')
         self.save_hyperparameters()
 
+        '''
         # Freeze the RoBERTa model
         for param in self.model.roberta.parameters():
             param.requires_grad = False
@@ -78,6 +86,7 @@ class UserClassifier(pl.LightningModule):
         # Unfreeze the classifier
         for param in self.model.classifier.parameters():
             param.requires_grad = True
+        '''
 
         self.loss = th.nn.CrossEntropyLoss(reduction='none')
 
@@ -133,9 +142,12 @@ class UserClassifier(pl.LightningModule):
         #print(input_ids.max().max())
         #print(transformers.AutoTokenizer.from_pretrained(FLAGS.model).decode(input_ids.max().max().item()))
 
+        with th.no_grad():
+            features = self.pretrained_model(input_ids=input_ids, attention_mask=mask, token_type_ids=token_type_ids)
 
-        output = self.model(input_ids=input_ids, attention_mask=mask, token_type_ids=token_type_ids)
-        logits = output.logits
+        logits = self.classifier(features.pooler_output)
+
+        #logits = output.logits
         #logits = self.model(input_ids=input_ids, attention_mask=mask).logits
         return logits
 
@@ -157,6 +169,9 @@ class UserClassifier(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         logits = self.forward(batch['input_ids'])
         labels = batch['is_gen_pub'].long()
+
+
+
         loss = self.loss(logits, labels)
         acc = logits.argmax(-1) == labels
         acc = acc.float()
@@ -320,6 +335,7 @@ def objective(trial: optuna.Trial):
           "momentum: ", momentum, '\n',
           "batch_size: ", batch_size, '\n')
 
+
     prune = optuna.integration.PyTorchLightningPruningCallback(
         trial, monitor="val_loss"
     )
@@ -366,7 +382,7 @@ def main(_):
         # training and optimization
         pruner = optuna.pruners.HyperbandPruner(3, 30, 2)
         study = optuna.create_study(direction="minimize", pruner=pruner)
-        study.optimize(objective, n_trials=6)
+        study.optimize(objective, n_trials=3, show_progress_bar=True)
 
         print("Number of finished trials: {}".format(len(study.trials)))
         print("Best trial:")
@@ -382,7 +398,7 @@ def main(_):
         lr=1e-5
         momentum=0.9
         batch_size=10
-        seq_length=128
+        seq_length=10
 
         model = UserClassifier(
             lr=lr,
@@ -405,7 +421,8 @@ def main(_):
             gpus=(1 if th.cuda.is_available() else 0),
             max_epochs=FLAGS.epochs,
             fast_dev_run=FLAGS.debug,
-            logger=tb_logger
+            logger=tb_logger,
+            callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3)]
         )
 
         trainer.fit(model)
@@ -421,10 +438,7 @@ if __name__ == '__main__':
 
 # TODO: Optional: setup this on a server (maybe not necessary due to short training times when only fine tuning classification head)
 # How many epochs should I train for? --> Early stopping, then use best run for testing.
-# TODO: Implement early stopping
-# TODO: implement hyperparameter tuning while training(?)
-# TODO: If training does not work, make hidden layer smaller? or remove it?
-# TODO: implement train_opt and testing mode
+
 
 
 '''
