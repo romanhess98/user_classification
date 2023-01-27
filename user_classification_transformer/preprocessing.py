@@ -34,7 +34,7 @@ df.dropna(inplace=True)
 df['is_gen_pub'] = df['is_gen_pub'].astype(int)
 
 #replace all links (starting with "https") in the description columns with "http"
-df['description'] = df['description'].str.replace(r'http\S+', 'http', regex=True)
+#df['description'] = df['description'].str.replace(r'http\S+', 'http', regex=True)
 
 # obtain all rows where 'description' is a duplicate
 df_duplicates = df[df.duplicated(['description'], keep=False)]
