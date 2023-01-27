@@ -33,7 +33,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 flags.DEFINE_boolean('debug', False, '')
 #TODO: set number of epochs
-flags.DEFINE_integer('epochs', 3, '')
+flags.DEFINE_integer('epochs', 300, '')
 #flags.DEFINE_integer('batch_size', 10, '')
 #flags.DEFINE_float('lr', '1e-3', '')
 #flags.DEFINE_float('momentum', '.9', '')
@@ -73,16 +73,19 @@ class UserClassifier(pl.LightningModule):
 
         self.pretrained_model = transformers.AutoModel.from_pretrained(pretrained_model_name_or_path=FLAGS.model)
 
+        # Freeze the RoBERTa model
+        for param in self.pretrained_model.parameters():
+            param.requires_grad = False
+
+
         self.classifier = th.nn.Sequential(th.nn.Linear(self.pretrained_model.pooler.dense.out_features, 2))
 
         #self.model = transformers.RobertaForSequenceClassification.from_pretrained('roberta-base')
         self.save_hyperparameters()
 
-        '''
-        # Freeze the RoBERTa model
-        for param in self.model.roberta.parameters():
-            param.requires_grad = False
 
+
+        '''
         # Unfreeze the classifier
         for param in self.model.classifier.parameters():
             param.requires_grad = True
@@ -327,13 +330,14 @@ def objective(trial: optuna.Trial):
     lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
     momentum = trial.suggest_float("momentum", 0.01, 0.99)
     batch_size = trial.suggest_int("batch_size", 4, 64)
-    #seq_length = trial.suggest_categorical("seq_length", [128, 256, 512])
+    seq_length = trial.suggest_categorical("seq_length", [90, 100, 128])
 
 
     print("This Trial: ", "\n",
           "lr: ", lr, '\n',
           "momentum: ", momentum, '\n',
-          "batch_size: ", batch_size, '\n')
+          "batch_size: ", batch_size, '\n',
+          "seq_length: ", seq_length, '\n',)
 
 
     prune = optuna.integration.PyTorchLightningPruningCallback(
@@ -351,7 +355,7 @@ def objective(trial: optuna.Trial):
         lr=lr,
         momentum=momentum,
         batch_size=batch_size,
-        seq_length=128
+        seq_length=seq_length
     )
 
     trainer.logger.log_hyperparams({
@@ -361,9 +365,6 @@ def objective(trial: optuna.Trial):
     })
 
     trainer.fit(model)
-
-
-
     return trainer.callback_metrics["val_loss"].item()
 
 
@@ -382,7 +383,7 @@ def main(_):
         # training and optimization
         pruner = optuna.pruners.HyperbandPruner(3, 30, 2)
         study = optuna.create_study(direction="minimize", pruner=pruner)
-        study.optimize(objective, n_trials=3, show_progress_bar=True)
+        study.optimize(objective, n_trials=50, show_progress_bar=True)
 
         print("Number of finished trials: {}".format(len(study.trials)))
         print("Best trial:")
@@ -394,11 +395,10 @@ def main(_):
             print("    {}: {}".format(key, value))
 
     elif FLAGS.mode == 'test':
-
-        lr=1e-5
-        momentum=0.9
-        batch_size=10
-        seq_length=10
+        lr=None
+        momentum=None
+        batch_size=None
+        seq_length=None
 
         model = UserClassifier(
             lr=lr,
@@ -436,8 +436,7 @@ if __name__ == '__main__':
 
 
 
-# TODO: Optional: setup this on a server (maybe not necessary due to short training times when only fine tuning classification head)
-# How many epochs should I train for? --> Early stopping, then use best run for testing.
+# TODO: setup this on a server (maybe not necessary due to short training times when only fine tuning classification head)
 
 
 
