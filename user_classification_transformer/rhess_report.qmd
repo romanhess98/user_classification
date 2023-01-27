@@ -1,0 +1,60 @@
+---
+title: "Quarto Basics"
+format:
+  html:
+    code-fold: true
+jupyter: python3
+---
+
+
+# Title: Improving the classification of General Public and Instituational Twitter Users with Transformers.
+
+
+# Introduction: brief explanation of the topic & its relevance plus the methodological approach
+
+-	When using twitter data for research, important to differentiate between individual and organizational accounts
+-	Present different definitions of individual and organizational
+-	Present reasons why differentiating is important
+
+
+Twitter is an interesting data source for computational communication scientists. The Twitter API makes it comparably easy to obtain large amounts of text data. This enables Big Data analyses for various purposes, but comes with its own challenges. For example, Twitter users might not be representative of the general offline population. Also, some twitter accounts might be fictious (cite Ahmed et al., 2017). Especially the detection of bots has triggered a lot of research (e.g. cite Kudugunta, Feng et al., Shukla). When researchers analyze Twitter data, they may want to exclude these cases from their datasets. Or they might also want to isolate users from a certain gender (cite Vashtisth), depending on the research questions. 
+
+Another differentiation between Twitter users, which can potentially impact the findings of a given research question is the separation of general public and institutional users. Institutional accounts differ from general public accounts in that they might represent a (governmental) institution, the media, or some other kind of organization. Communication on Twitter can be social or non-social and spontaneous or strategic. When researchers are mainly interested in natural communication between individuals, they might want to filter out the institutional users first (cite Kwon). 
+
+Defining who is a general public and who is an institutional user is not trivial and different approaches exist in the literature. Li et al (cite) aimed at differentiating between male, female and *brand-related* twitter users. Yan et al. (cite) differentiate between *open* and *closed* accounts, where open accounts publish information to the public, with their goal being to promote products, services or themselves. Closed accounts on the other hand publish information about their daily lives and use twitter to communicate with their friends. McCorriston et al. (cite)  created a tool to distinguish between organizational and individual accounts but did not define their definition of *organizational* in detail. Lastly, De Choudhury et al. (cite) split Twitter users into ordinary individuals, organizations, and journalists/media bloggers. The existing diversity and intransparency in defining user categories is problematic
+
+
+
+
+# Literature review: (short) review of existing literature incl. derivation and formulation of hypotheses/research questions
+
+- Present different existing approaches for differentiating between individual and organizational accounts
+
+- Present problem: even though many of them use text data, no transformer models used!
+
+-	Present paper, stressing the advantages of transformer models in social sciences text analysis
+
+- Present hypotheses:
+
+    - Transformers achieve better performance within the datasets
+    - Transformers achieve better performances across datasets (generalization)
+
+
+# Method: description of the data set (origins & structure of the data, sampling approach, data preprocessing) and the analysis logic (incl. detailed explanation of used software packages & functions/models)
+
+- describe datasets
+- describe preprocessing
+- describe tokenization
+- describe RoBERTa model
+
+
+# Results: testing of hypotheses/answering of research questions (incl. data visualizations where applicable)
+
+- present results (compared to original authors' results)
+
+# Discussion: summary and interpretation of results, limitations of the methodological approach, outlook
+
+- why did this work? what does it mean
+- why did it not work?
+- what could be improved?
+
