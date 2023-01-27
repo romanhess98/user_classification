@@ -434,10 +434,7 @@ def main(_):
 if __name__ == '__main__':
     app.run(main)
 
-
-
-# TODO: setup this on a server (maybe not necessary due to short training times when only fine tuning classification head)
-
+# TODO: setup this on a server
 
 
 '''
