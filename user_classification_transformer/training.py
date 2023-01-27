@@ -418,6 +418,7 @@ if __name__ == '__main__':
 # TODO: If training does not work, make hidden layer smaller? or remove it?
 # TODO: implement train_opt and testing mode
 
+
 '''
 # Improvement Ideas:
 # fine tune newly added special tokens.
