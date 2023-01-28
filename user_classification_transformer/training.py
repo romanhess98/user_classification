@@ -21,6 +21,7 @@ from datasets import ClassLabel, Value
 import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 from datetime import datetime
 import optuna
@@ -48,8 +49,8 @@ flags.DEFINE_string('mode', 'default_mode', '')
 
 FLAGS = flags.FLAGS
 
-sh.rm('-r', '-f', 'logs')
-sh.mkdir('logs')
+#sh.rm('-r', '-f', 'logs')
+#sh.mkdir('logs')
 
 # import IPython ; IPython.embed() ; exit(1)
 
@@ -345,10 +346,11 @@ def objective(trial: optuna.Trial):
     )
 
     trainer = pl.Trainer(
-        default_root_dir='logs',
+        default_root_dir=f'logs/{FLAGS.mode}/{FLAGS.train_ds}',
         gpus=(1 if th.cuda.is_available() else 0),
         max_epochs=FLAGS.epochs,
-        callbacks=[prune]
+        callbacks=[prune],
+        enable_checkpointing=False
     )
 
     model = UserClassifier(
@@ -383,7 +385,7 @@ def main(_):
         # training and optimization
         pruner = optuna.pruners.HyperbandPruner(3, 30, 2)
         study = optuna.create_study(direction="minimize", pruner=pruner)
-        study.optimize(objective, n_trials=20, show_progress_bar=True)
+        study.optimize(objective, n_trials=10, show_progress_bar=True)
 
         print("Number of finished trials: {}".format(len(study.trials)))
         print("Best trial:")
@@ -395,10 +397,10 @@ def main(_):
             print("    {}: {}".format(key, value))
 
     elif FLAGS.mode == 'test':
-        lr=None
-        momentum=None
-        batch_size=None
-        seq_length=None
+        lr=1e-5
+        momentum=0.9
+        batch_size=10
+        seq_length=10
 
         model = UserClassifier(
             lr=lr,
@@ -411,10 +413,23 @@ def main(_):
         dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
         print(dt_string)
 
-        tb_logger = TensorBoardLogger('tb_logs/',
+        tb_logger = TensorBoardLogger(f'logs/{FLAGS.mode}/{FLAGS.train_ds}/',
                                       name=f"{FLAGS.train_ds}_{FLAGS.test_ds}_{dt_string}",
                                       version=0
                                       )
+        
+        '''
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=f'logs/{FLAGS.mode}/{FLAGS.train_ds}',
+            filename=f'epochs={FLAGS.epochs}_lr={lr}_m={momentum}_bs={batch_size}_seq_l={seq_length}.ckpt',
+            save_top_k=1,
+            monitor='val_loss',
+            mode='min',
+            every_n_epochs=2,
+            save_on_train_epoch_end=True
+        )
+
+        '''
 
         trainer = pl.Trainer(
             default_root_dir='logs',
@@ -422,12 +437,19 @@ def main(_):
             max_epochs=FLAGS.epochs,
             fast_dev_run=FLAGS.debug,
             logger=tb_logger,
-            callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3)]
+            callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=5)],
+            checkpoint_callback=False
         )
+
+        save_path = f'logs/models/{FLAGS.mode}/{FLAGS.train_ds}_epochs={FLAGS.epochs}_lr={lr}_m={momentum}_bs={batch_size}_seq_l={seq_length}.ckpt'
 
         trainer.fit(model)
 
-        trainer.test(ckpt_path='best')
+        #save the model
+        trainer.save_checkpoint(save_path)
+
+
+        trainer.test(model)
 
 
 
@@ -459,5 +481,31 @@ num_added_tokens = tokenizer.add_tokens(new_special_tokens)
 embeddings.weight.data[-num_added_tokens:, :].requires_grad = True
 
 This way, the pre-trained embeddings will not be fine-tuned during training, but the embeddings for the newly added special tokens will be fine-tuned.
+
+'''
+
+
+
+
+
+'''
+
+classifier_only = torch.nn.Sequential(model.classifier)
+trainer.save_checkpoint(classifier_only.state_dict(), save_path)
+
+
+
+
+# Create a new classifier with the same architecture as the original classifier
+classifier = torch.nn.Sequential(...)
+
+# Load the state_dict from the checkpoint file
+classifier.load_state_dict(torch.load(save_path))
+
+# Set the classifier of the model to the loaded classifier
+model.classifier = classifier
+
+# Run test
+trainer.test()
 
 '''
