@@ -128,7 +128,7 @@ The goal of this work is to show the advantages of transformer models over conve
 In order to do that we tried to locate the datasets used by previous classification models and surpass the original authors' performance by using BERTweet for generating text features.
 The only dataset we could find was that used by Kwon et al (cite), who used Twitter profile descriptions as the sole input for their classifier.
 To be precise, the authors used five different datasets which were collected in the context of different events (*boston*, *brussels*, *mesa*, *quebec*, *random*).
-They trained one model per dataset and then evaluated the performances within the same dataset as well as the classifier's generalization across the other datasets.
+They trained one model per dataset and then evaluated the performances within the same dataset as well as the classifiers' generalization across the other datasets.
 
 ## Hypotheses
 
@@ -159,6 +159,84 @@ H5.2: a better performance on all other test sets, when trained on the *random* 
 - describe preprocessing
 - describe tokenization
 - describe RoBERTa model
+- describe training setup
+
+## Data
+The dataset used by Kwon et al. (cite) consisted of three variables.
+The first column contained the Twitter profile descriptions as strings.
+The second column *is_gen_pub* listed the labels (institutional=0, general public=1).
+The third column contained the *source* and thus allowed to split the dataset into the five smaller datasets *boston*, *brussels*, *mesa*, *quebec*, and *random*.
+
+Overall the dataset consisted of TODO cases.
+Out of those, TODO belonged to the *boston* dataset, TODO to *brussels*, TODO to *mesa*, TODO to *quebec* and TODO to *random*.
+
+
+## Preprocessing
+In a first step, we cleaned the dataset. The labels were created through manual annotation by different raters.
+Because of that, the dataset contained some duplicate cases, where the same profile description had received different labels.
+As inconsistent labels can hurt machine learning, we decided to handle these cases as follows.
+First we split the dataset into the five smaller datasets based on the *source* column.
+Then, under the assumption that the majority label is the correct one, we replaced multiple occurrences of the same profile description with a single row containing the description and the majority class as label.
+An equal amount of positive and negative ratings resulted in the assignment of the positive class (1).
+The dataset sizes before and after cleaning are shown in Table X (TODO).
+
+In a last step each of the five datasets was split into a training, validation, and test set.
+In the original paper, Kwon et al. used an 80/20 split to create a training and test set (cite).
+As using BERTweet requires defining some hyperparameters, we decided to create a validation set as well.
+Thus, we used a split of 70/10/20 for the training, validation, and test set.
+Before splitting the data, we randomly shuffled it, to avoid different label distributions between the sets.
+It would have been advantageous if the train-test split from the original paper had been known to outrule any other reasons for the expected difference in performance when using BERTweet.
+However, as the original study's authors used the scikit learn library for training (cite), it is likely that they shuffled the data as well before training.
+Overall, as the shuffling is random, it should not make a real difference.
+
+
+##Tokenization
+BERTweet (cite) offers its own tokenizer.
+It is recommended to use it as this is the tokenizer that was used during pretraining.
+An example of how the tokenizer works is shown in Table X (TODO).
+Tokens in this case are not whole words but smaller parts of words.
+A syllable following another inside the same word is indicated by an *@*-symbol.
+Inputs not understood by the tokenizer receive a special *unknown*-token.
+When using BERTweet, one has to decide on a maximum input length to feed to the model.
+The largest length (meaning the number of tokens) the model can take is 128.
+The distribution of the number of tokens per profile description in all five datasets is shown in Figure X (TODO).
+Using hyperparameter optimization we tried three different configurations of 90, 100 and 128 as the maximum sequence length.
+Any profile description longer than this would be cut at the maximum length and every description shorter than this would be filled up to this maximum length using a special padding token.
+
+## Model
+As described above, the BERTweet pretrained transformer model was used to obtain a meaningful representation of the profile descriptions.
+This representation was dense (meaning it consisted of float numbers) and TODO-dimensional.
+
+These features were then fed into a simple linear classifier with two output neurons and a bias.
+The classifier thus consisted of TODO parameters.
+The outputs were fed as logit values into Pytorch's cross entropy loss function.
+From there the loss was backpropagated only through the classifier.
+The parameters of BERTweet remained unchanged throughout the training process.
+
+## Training
+For training, the Pytorch Lightning library was used together with huggingface's nlp and transformers libraries.
+The creation of our study's results consisted of two parts.
+First the model was trained on the training set.
+During this, a hyperparameter search was used to find the ideal hyperparameter configuration.
+The hyperparameters used and the corresponding search spaces are shown in Table X (TODO).
+
+For hyperparameter optimization, the *HyperbandPruner* from the optuna library was used, taking the validation loss as the evaluation criterion.
+Due to computational limitations, the search went on for 20 trials and 40 epochs per dataset (*boston*, *brussels*, *mesa*, *quebec*, and *random*).
+A more thorough investigation over more epochs and more trials would likely result in a more optimal configuration than the one we found.
+
+Once the best hyperparameter configuration was identified, within each dataset, a model was trained on the training data and tested on the test data.
+The maximum number of epochs for training was 500.
+Also, an early stopping mechanism had been implemented.
+The model would train until the validation loss did not increase anymore for ten epochs.
+Then the model parametrization from the epoch with the lowest validation loss would be used for testing on the test dataset.
+
+Our evaluation criteria for the test set were the same as in the original study.
+We measures accuracy, precision, recall, and F1 score.
+The results of the study are presented in the next section.
+
+
+
+
 
 
 # Results: testing of hypotheses/answering of research questions (incl. data visualizations where applicable)

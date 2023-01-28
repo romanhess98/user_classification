@@ -434,7 +434,8 @@ def main(_):
 if __name__ == '__main__':
     app.run(main)
 
-# TODO: setup this on a server
+# TODO: Implement model parameter saving to use it for testing on all other datasets (no need to train 5 times)
+
 
 
 '''
