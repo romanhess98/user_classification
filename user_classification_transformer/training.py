@@ -33,7 +33,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 flags.DEFINE_boolean('debug', False, '')
 #TODO: set number of epochs
-flags.DEFINE_integer('epochs', 300, '')
+flags.DEFINE_integer('epochs', 40, '')
 #flags.DEFINE_integer('batch_size', 10, '')
 #flags.DEFINE_float('lr', '1e-3', '')
 #flags.DEFINE_float('momentum', '.9', '')
@@ -383,7 +383,7 @@ def main(_):
         # training and optimization
         pruner = optuna.pruners.HyperbandPruner(3, 30, 2)
         study = optuna.create_study(direction="minimize", pruner=pruner)
-        study.optimize(objective, n_trials=50, show_progress_bar=True)
+        study.optimize(objective, n_trials=20, show_progress_bar=True)
 
         print("Number of finished trials: {}".format(len(study.trials)))
         print("Best trial:")
