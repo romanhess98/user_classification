@@ -1,0 +1,4 @@
+batch_size: 40
+lr: 0.04372102261522472
+momentum: 0.8468413512173503
+seq_length: 100
