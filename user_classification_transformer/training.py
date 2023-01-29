@@ -34,7 +34,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 flags.DEFINE_boolean('debug', False, '')
 #TODO: set number of epochs
-flags.DEFINE_integer('epochs', 50, '')
+flags.DEFINE_integer('epochs', 3, '')
 #flags.DEFINE_integer('batch_size', 10, '')
 #flags.DEFINE_float('lr', '1e-3', '')
 #flags.DEFINE_float('momentum', '.9', '')
@@ -413,12 +413,14 @@ def main(_):
             seq_length=seq_length
         )
 
+        '''
         now = datetime.now()
         dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
         print(dt_string)
+        '''
 
         tb_logger = TensorBoardLogger(f'logs/{FLAGS.mode}/{FLAGS.train_ds}/',
-                                      name=f"{FLAGS.train_ds}_{FLAGS.test_ds}_{dt_string}",
+                                      name=f"test={FLAGS.test_ds}_epochs={FLAGS.epochs}",
                                       version=0
                                       )
         
@@ -445,14 +447,23 @@ def main(_):
             checkpoint_callback=False
         )
 
-        save_path = f'logs/models/{FLAGS.mode}/{FLAGS.train_ds}_epochs={FLAGS.epochs}_lr={lr}_m={momentum}_bs={batch_size}_seq_l={seq_length}.ckpt'
-
         trainer.fit(model)
 
+        model_save_path = f'logs/models/full/{FLAGS.mode}/{FLAGS.train_ds}_epochs={FLAGS.epochs}_lr={lr}_m={momentum}_bs={batch_size}_seq_l={seq_length}.ckpt'
+        classifier_save_path = f'logs/models/classifier/{FLAGS.mode}/{FLAGS.train_ds}_epochs={FLAGS.epochs}_lr={lr}_m={momentum}_bs={batch_size}_seq_l={seq_length}.ckpt'
+
         #save the model
-        trainer.save_checkpoint(save_path)
+        trainer.save_checkpoint(model_save_path)
 
+        #save the classifier
+        classifier_only = th.nn.Sequential(model.classifier)
+        th.save(classifier_only, classifier_save_path)
 
+        #load the classifier
+        my_classifier = th.load(classifier_save_path)
+        model.classifier = my_classifier
+
+        #test the model
         trainer.test(model)
 
 
@@ -488,14 +499,16 @@ This way, the pre-trained embeddings will not be fine-tuned during training, but
 
 '''
 
-
-
-
-
 '''
 
-classifier_only = torch.nn.Sequential(model.classifier)
-trainer.save_checkpoint(classifier_only.state_dict(), save_path)
+classifier_only = th.nn.Sequential(model.classifier)
+
+th.save(classifier_only, classifier_save_path)
+
+my_classifier = th.load(classifier_save_path)
+
+model.classifier = my_classifier
+ 
 
 
 
