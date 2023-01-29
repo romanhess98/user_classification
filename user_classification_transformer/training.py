@@ -346,7 +346,7 @@ def objective(trial: optuna.Trial):
     )
 
     trainer = pl.Trainer(
-        default_root_dir=f'logs/{FLAGS.mode}/{FLAGS.train_ds}',
+        default_root_dir=f'logs/{FLAGS.mode}/{FLAGS.train_ds}/epochs={FLAGS.epochs}_n_trials={10}',
         gpus=(1 if th.cuda.is_available() else 0),
         max_epochs=FLAGS.epochs,
         callbacks=[prune],
