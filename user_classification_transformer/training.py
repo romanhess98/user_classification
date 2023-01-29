@@ -34,7 +34,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 flags.DEFINE_boolean('debug', False, '')
 #TODO: set number of epochs
-flags.DEFINE_integer('epochs', 40, '')
+flags.DEFINE_integer('epochs', 50, '')
 #flags.DEFINE_integer('batch_size', 10, '')
 #flags.DEFINE_float('lr', '1e-3', '')
 #flags.DEFINE_float('momentum', '.9', '')
@@ -45,6 +45,7 @@ flags.DEFINE_string('train_ds', 'df_all_train', '')
 flags.DEFINE_string('val_ds', 'df_all_val', '')
 flags.DEFINE_string('test_ds', 'df_all_test', '')
 flags.DEFINE_string('mode', 'default_mode', '')
+flags.DEFINE_integer('n_trials', 0, '')
 
 
 FLAGS = flags.FLAGS
@@ -346,7 +347,7 @@ def objective(trial: optuna.Trial):
     )
 
     trainer = pl.Trainer(
-        default_root_dir=f'logs/{FLAGS.mode}/{FLAGS.train_ds}/epochs={FLAGS.epochs}_n_trials={10}',
+        default_root_dir=f'logs/{FLAGS.mode}/{FLAGS.train_ds}/epochs={FLAGS.epochs}_n_trials={FLAGS.n_trials}',
         gpus=(1 if th.cuda.is_available() else 0),
         max_epochs=FLAGS.epochs,
         callbacks=[prune],
@@ -382,10 +383,13 @@ def main(_):
 
 
     if FLAGS.mode =='train':
+        if FLAGS.n_trials == 0:
+            raise Exception("Please define the number of trials.")
+
         # training and optimization
         pruner = optuna.pruners.HyperbandPruner(3, 30, 2)
         study = optuna.create_study(direction="minimize", pruner=pruner)
-        study.optimize(objective, n_trials=10, show_progress_bar=True)
+        study.optimize(objective, n_trials=FLAGS.n_trials, show_progress_bar=True)
 
         print("Number of finished trials: {}".format(len(study.trials)))
         print("Best trial:")
