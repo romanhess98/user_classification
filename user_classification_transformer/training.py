@@ -34,7 +34,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 flags.DEFINE_boolean('debug', False, '')
 #TODO: set number of epochs
-flags.DEFINE_integer('epochs', 3, '')
+flags.DEFINE_integer('epochs', 500, '')
 #flags.DEFINE_integer('batch_size', 10, '')
 #flags.DEFINE_float('lr', '1e-3', '')
 #flags.DEFINE_float('momentum', '.9', '')
@@ -401,10 +401,10 @@ def main(_):
             print("    {}: {}".format(key, value))
 
     elif FLAGS.mode == 'test':
-        lr=1e-5
-        momentum=0.9
-        batch_size=10
-        seq_length=10
+        lr=0.042889952348328146
+        momentum=0.7008668763590266
+        batch_size=21
+        seq_length=100
 
         model = UserClassifier(
             lr=lr,
@@ -420,7 +420,7 @@ def main(_):
         '''
 
         tb_logger = TensorBoardLogger(f'logs/{FLAGS.mode}/{FLAGS.train_ds}/',
-                                      name=f"test={FLAGS.test_ds}_epochs={FLAGS.epochs}",
+                                      name=f"test={FLAGS.test_ds}_epochs={FLAGS.epochs}_lr={lr}_m={momentum}_bs={batch_size}_seq_l={seq_length}",
                                       version=0
                                       )
         
