@@ -443,7 +443,7 @@ def main(_):
             max_epochs=FLAGS.epochs,
             fast_dev_run=FLAGS.debug,
             logger=tb_logger,
-            callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=5)],
+            callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=10)],
             checkpoint_callback=False
         )
 

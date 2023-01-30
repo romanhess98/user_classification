@@ -18,6 +18,9 @@ import pandas as pd
 # import dataset
 df = pd.read_csv('data/df_raw.csv', encoding='latin-1')
 
+#print dataset size
+print(len(df))
+
 # problematic encodings
 print("\nSome rows have problematic values. It seems there was something wrong with the encodings there")
 print(df.loc[[155, 939, 1330, 166, 2155]])
@@ -27,8 +30,20 @@ df.columns = ['description', 'is_gen_pub', 'source']
 
 
 
+
+
 #remove rows with nan values
 df.dropna(inplace=True)
+
+#print cases per source
+print("\nCases per source:")
+print(df['source'].value_counts())
+
+#print labels per source
+print("\nLabels per source:")
+print(df.groupby('source')['is_gen_pub'].value_counts())
+
+
 
 #turn is_gen_pub column into int type
 df['is_gen_pub'] = df['is_gen_pub'].astype(int)

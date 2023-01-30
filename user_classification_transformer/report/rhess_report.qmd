@@ -1,5 +1,6 @@
 ---
-title: "Quarto Basics"
+title: "Improving the Classification of General Public and Institutional Twitter Users with Transformers."
+bibliography: references.bib
 format:
   html:
     code-fold: true
@@ -7,7 +8,7 @@ jupyter: python3
 ---
 
 
-# Title: Improving the classification of General Public and Instituational Twitter Users with Transformers.
+# Title:
 
 
 # Introduction: brief explanation of the topic & its relevance plus the methodological approach
@@ -167,8 +168,14 @@ The first column contained the Twitter profile descriptions as strings.
 The second column *is_gen_pub* listed the labels (institutional=0, general public=1).
 The third column contained the *source* and thus allowed to split the dataset into the five smaller datasets *boston*, *brussels*, *mesa*, *quebec*, and *random*.
 
-Overall the dataset consisted of TODO cases.
-Out of those, TODO belonged to the *boston* dataset, TODO to *brussels*, TODO to *mesa*, TODO to *quebec* and TODO to *random*.
+Overall the dataset consisted of 8945 cases.
+Out of those, 2000 belonged to the *boston* dataset, 2008 to *brussels*, 918 to *mesa*, 1998 to *quebec* and 2021 to *random*.
+Unfortunately, we spotted an error in the mesa data.
+All annotations carried the label 1, and there were no negative cases.
+Thus, we decided, to remove the mesa data from our analysis.
+This sparked doubt about the reliability of the other datasets as well.
+However, for the other sources, the distribution of positive and negative cases matched the description of the authors making them seem reliable enough for us to analyze (cite Kwon).
+
 
 
 ## Preprocessing
@@ -179,6 +186,16 @@ First we split the dataset into the five smaller datasets based on the *source* 
 Then, under the assumption that the majority label is the correct one, we replaced multiple occurrences of the same profile description with a single row containing the description and the majority class as label.
 An equal amount of positive and negative ratings resulted in the assignment of the positive class (1).
 The dataset sizes before and after cleaning are shown in Table X (TODO).
+
+| Dataset | Before | After |
+|:-------:|:------:|:-----:|
+| boston  | 2000   | 1675  |
+| brussels| 1997   | 1997  |
+| quebec  | 1998   | 1751  |
+| random  | 2021   | 2003  |
+
+: Dataset sizes before and after cleaning
+
 
 In a last step each of the five datasets was split into a training, validation, and test set.
 In the original paper, Kwon et al. used an 80/20 split to create a training and test set (cite).
@@ -193,22 +210,27 @@ Overall, as the shuffling is random, it should not make a real difference.
 ##Tokenization
 BERTweet (cite) offers its own tokenizer.
 It is recommended to use it as this is the tokenizer that was used during pretraining.
-An example of how the tokenizer works is shown in Table X (TODO).
-Tokens in this case are not whole words but smaller parts of words.
+For example, the tokenizer would transform the input 'Feminist. Proud liberal. Pro-love. Colin Morgan fan. Book lover.
+History geek. Cat person. Chocolate eater. Apparently a snowflake. #TheResistance #ImpeachTrump' into the following tokens:
+'Femin@@', 'ist@@', '.', 'Proud', 'liber@@', 'al.', 'Pro-@@', 'love@@', '.', 'Colin', 'Morgan', 'fan@@', '.', 'Book',
+'lo@@', 'ver@@', '.', 'History', 'gee@@', 'k@@', '.', 'Cat', 'person@@', '.', 'Chocolate', 'ea@@', 'ter@@', '.', 'Apparently',
+ 'a', 'snow@@', 'fla@@', 'ke@@', '.', '#TheResistance', '#ImpeachTrump'.
+
+Tokens in this case are not always whole words but smaller parts of words.
 A syllable following another inside the same word is indicated by an *@*-symbol.
 Inputs not understood by the tokenizer receive a special *unknown*-token.
 When using BERTweet, one has to decide on a maximum input length to feed to the model.
 The largest length (meaning the number of tokens) the model can take is 128.
-The distribution of the number of tokens per profile description in all five datasets is shown in Figure X (TODO).
+The distribution of the number of tokens per profile description in all five datasets is shown in Figure ![X](figs/token_lengths.png). TODO
 Using hyperparameter optimization we tried three different configurations of 90, 100 and 128 as the maximum sequence length.
 Any profile description longer than this would be cut at the maximum length and every description shorter than this would be filled up to this maximum length using a special padding token.
 
 ## Model
 As described above, the BERTweet pretrained transformer model was used to obtain a meaningful representation of the profile descriptions.
-This representation was dense (meaning it consisted of float numbers) and TODO-dimensional.
+This representation was dense (meaning it consisted of float numbers) and 768-dimensional.
 
 These features were then fed into a simple linear classifier with two output neurons and a bias.
-The classifier thus consisted of TODO parameters.
+The classifier thus consisted of 1537 parameters.
 The outputs were fed as logit values into Pytorch's cross entropy loss function.
 From there the loss was backpropagated only through the classifier.
 The parameters of BERTweet remained unchanged throughout the training process.
@@ -220,8 +242,17 @@ First the model was trained on the training set.
 During this, a hyperparameter search was used to find the ideal hyperparameter configuration.
 The hyperparameters used and the corresponding search spaces are shown in Table X (TODO).
 
+| Dataset | Learning Rate  | Momentum | Batch Size | Sequence Length |
+|:-------:|:--------------:|:--------:|:----------:|:---------------:|
+| boston  | 0.0088         | 0.4863   |  33        |    100          |
+| brussels| 0.0837         | 0.5388   |  60        |    100          |
+| quebec  | 0.0646         | 0.6405   |  15        |    128          |
+| random  | 0.0429         | 0.7009   |  21        |    100          |
+
+
+
 For hyperparameter optimization, the *HyperbandPruner* from the optuna library was used, taking the validation loss as the evaluation criterion.
-Due to computational limitations, the search went on for 20 trials and 40 epochs per dataset (*boston*, *brussels*, *mesa*, *quebec*, and *random*).
+Due to computational limitations, the search went on for 10 trials and 40 epochs per dataset (*boston*, *brussels*, *mesa*, *quebec*, and *random*).
 A more thorough investigation over more epochs and more trials would likely result in a more optimal configuration than the one we found.
 
 Once the best hyperparameter configuration was identified, within each dataset, a model was trained on the training data and tested on the test data.
@@ -243,9 +274,79 @@ The results of the study are presented in the next section.
 
 - present results (compared to original authors' results)
 
+
+| Train   | Test     | A    | P     |    R   |    F1  |
+|:-------:|:--------:|:----:|:-----:|:------:|:------:|
+| boston  | boston   |      |       |        |        |
+|         | brussels |      |       |        |        |
+|         | mesa     |      |       |        |        |
+|         | quebec   |      |       |        |        |
+|         | random   |      |       |        |        |
+| brussels| boston   |      |       |        |        |
+|         | brussels |      |       |        |        |
+|         | mesa     |      |       |        |        |
+|         | quebec   |      |       |        |        |
+|         | random   |      |       |        |        |
+| mesa    | boston   |      |       |        |        |
+|         | brussels |      |       |        |        |
+|         | mesa     |      |       |        |        |
+|         | quebec   |      |       |        |        |
+|         | random   |      |       |        |        |
+| quebec  | boston   |      |       |        |        |
+|         | brussels |      |       |        |        |
+|         | mesa     |      |       |        |        |
+|         | quebec   |      |       |        |        |
+|         | random   |      |       |        |        |
+| random  | boston   |      |       |        |        |
+|         | brussels |      |       |        |        |
+|         | mesa     |      |       |        |        |
+|         | quebec   |      |       |        |        |
+|         | random   |      |       |        |        |
+
+: Our study's results
+
+
+| Train   | Test     |  A   |  P   |  R   |  F1  |
+|:-------:|:--------:|:----:|:----:|:----:|:----:|
+| mesa    | mesa     | .942 | .953 | .979 | .966 |
+|         | boston   | .655 | .628 | .989 | .768 |
+|         | brussels | .774 | .767 | .983 | .861 |
+|         | quebec   | .887 | .894 | .989 | .939 |
+|         | random   | .802 | .848 | .933 | .889 |
+| boston  | boston   | .830 | .836 | .877 | .856 |
+|         | brussels | .736 | .876 | .736 | .800 |
+|         | mesa     | .850 | .969 | .848 | .904 |
+|         | quebec   | .806 | .923 | .851 | .886 |
+|         | random   | .685 | .852 | .760 | .803 |
+| brussels| brussels | .828 | .874 | .889 | .881 |
+|         | boston   | .794 | .762 | .935 | .840 |
+|         | mesa     | .867 | .942 | .897 | .919 |
+|         | quebec   | .869 | .919 | .934 | .926 |
+|         | random   | .704 | .859 | .778 | .817 |
+| quebec  | quebec   | .889 | .914 | .966 | .939 |
+|         | brussels | .811 | .827 | .931 | .876 |
+|         | boston   | .770 | .732 | .950 | .827 |
+|         | mesa     | .879 | .903 | .959 | .930 |
+|         | random   | .792 | .848 | .919 | .882 |
+| random  | random   | .743 | .867 | .827 | .847 |
+|         | brussels | .616 | .751 | .714 | .732 |
+|         | boston   | .586 | .636 | .764 | .694 |
+|         | mesa     | .704 | .863 | .755 | .806 |
+|         | quebec   | .677 | .897 | .725 | .802 |
+
+: The original study's results using a random forrest classifier (cite Kwon et al-.
+
+
+
 # Discussion: summary and interpretation of results, limitations of the methodological approach, outlook
 
 - why did this work? what does it mean
 - why did it not work?
 - what could be improved?
 
+    - more thorough hyperparameter search
+    - retrain top layers of bert model
+    - try different tokenizers
+    - try different optimizers
+    - try stopword removal
+    -
