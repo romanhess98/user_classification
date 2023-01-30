@@ -28,10 +28,6 @@ print(df.loc[[155, 939, 1330, 166, 2155]])
 #rename columns
 df.columns = ['description', 'is_gen_pub', 'source']
 
-
-
-
-
 #remove rows with nan values
 df.dropna(inplace=True)
 
@@ -42,8 +38,6 @@ print(df['source'].value_counts())
 #print labels per source
 print("\nLabels per source:")
 print(df.groupby('source')['is_gen_pub'].value_counts())
-
-
 
 #turn is_gen_pub column into int type
 df['is_gen_pub'] = df['is_gen_pub'].astype(int)

@@ -35,9 +35,9 @@ This filtering can also be helpful for recommendation engines, products opinion 
 As institutional accounts make up 9% of Twitter accounts (cite McCorriston) they can skew the tweet sample significantly.
 
 Defining who is a general public and who is an institutional user is not trivial and different approaches exist in the literature.
-Li et al (cite) aimed at differentiating between male, female and *brand-related* twitter users.
+Li et al (cite) aimed at differentiating between male, female and *brand-related* Twitter users.
 Yan et al. (cite) differentiate between *open* and *closed* accounts, where open accounts publish information to the public, with their goal being to promote products, services or themselves.
-Closed accounts on the other hand publish information about their daily lives and use twitter to communicate with their friends.
+Closed accounts on the other hand publish information about their daily lives and use Twitter to communicate with their friends.
 McCorriston et al. (cite)  created a tool to distinguish between organizational and individual accounts but did not define their definition of *organizational* in detail.
 Lastly, De Choudhury et al. (cite) split Twitter users into ordinary individuals, organizations, and journalists/media bloggers.
 The existing diversity and intransparency in defining user categories is not ideal.
@@ -134,24 +134,25 @@ They trained one model per dataset and then evaluated the performances within th
 ## Hypotheses
 
 As the profile descriptions are the only input used, we expect BERTweet to enable a better performance than in the original study.
-Thus we define our hypotheses as follows:
+Thus, we define our hypotheses as follows:
 
-By designing our own classifier, using the BERTweet encoder to generate dense and meaningful representations of twitter profile descriptions, we expect to achieve
+By designing our own classifier, using the BERTweet encoder to generate dense and meaningful representations of Twitter profile descriptions, we expect to achieve:
 
 H1.1: a better performance on the *boston* test set, when trained on the *boston* training set than in the original study.
+
 H1.2: a better performance on all other test sets, when trained on the *boston* training set than in the original study.
 
 H2.1: a better performance on the *brussels* test set, when trained on the *brussels* training set than in the original study.
+
 H2.2: a better performance on all other test sets, when trained on the *brussels* training set than in the original study.
 
-H3.1: a better performance on the *mesa* test set, when trained on the *mesa* training set than in the original study.
-H3.2: a better performance on all other test sets, when trained on the *mesa* training set than in the original study.
+H3.1: a better performance on the *quebec* test set, when trained on the *quebec* training set than in the original study.
 
-H4.1: a better performance on the *quebec* test set, when trained on the *quebec* training set than in the original study.
-H4.2: a better performance on all other test sets, when trained on the *quebec* training set than in the original study.
+H3.2: a better performance on all other test sets, when trained on the *quebec* training set than in the original study.
 
-H5.1: a better performance on the *random* test set, when trained on the *random* training set than in the original study.
-H5.2: a better performance on all other test sets, when trained on the *random* training set than in the original study.
+H4.1: a better performance on the *random* test set, when trained on the *random* training set than in the original study.
+
+H4.2: a better performance on all other test sets, when trained on the *random* training set than in the original study.
 
 
 # Method: description of the data set (origins & structure of the data, sampling approach, data preprocessing) and the analysis logic (incl. detailed explanation of used software packages & functions/models)
@@ -185,10 +186,10 @@ As inconsistent labels can hurt machine learning, we decided to handle these cas
 First we split the dataset into the five smaller datasets based on the *source* column.
 Then, under the assumption that the majority label is the correct one, we replaced multiple occurrences of the same profile description with a single row containing the description and the majority class as label.
 An equal amount of positive and negative ratings resulted in the assignment of the positive class (1).
-The dataset sizes before and after cleaning are shown in Table X (TODO).
+The dataset sizes before and after cleaning are shown in Table X.
 
 | Dataset | Before | After |
-|:-------:|:------:|:-----:|
+|:-------:|:-------|:------|
 | boston  | 2000   | 1675  |
 | brussels| 1997   | 1997  |
 | quebec  | 1998   | 1751  |
@@ -210,8 +211,14 @@ Overall, as the shuffling is random, it should not make a real difference.
 ##Tokenization
 BERTweet (cite) offers its own tokenizer.
 It is recommended to use it as this is the tokenizer that was used during pretraining.
-For example, the tokenizer would transform the input 'Feminist. Proud liberal. Pro-love. Colin Morgan fan. Book lover.
-History geek. Cat person. Chocolate eater. Apparently a snowflake. #TheResistance #ImpeachTrump' into the following tokens:
+For example, the tokenizer would transform the input:
+
+'Feminist. Proud liberal. Pro-love. Colin Morgan fan. Book lover.
+History geek. Cat person. Chocolate eater. Apparently a snowflake. #TheResistance #ImpeachTrump'
+
+into the following tokens:
+
+
 'Femin@@', 'ist@@', '.', 'Proud', 'liber@@', 'al.', 'Pro-@@', 'love@@', '.', 'Colin', 'Morgan', 'fan@@', '.', 'Book',
 'lo@@', 'ver@@', '.', 'History', 'gee@@', 'k@@', '.', 'Cat', 'person@@', '.', 'Chocolate', 'ea@@', 'ter@@', '.', 'Apparently',
  'a', 'snow@@', 'fla@@', 'ke@@', '.', '#TheResistance', '#ImpeachTrump'.
@@ -221,7 +228,14 @@ A syllable following another inside the same word is indicated by an *@*-symbol.
 Inputs not understood by the tokenizer receive a special *unknown*-token.
 When using BERTweet, one has to decide on a maximum input length to feed to the model.
 The largest length (meaning the number of tokens) the model can take is 128.
-The distribution of the number of tokens per profile description in all five datasets is shown in Figure ![X](figs/token_lengths.png). TODO
+The distribution of the number of tokens per profile description in all five datasets is shown in Figure X.
+
+TODO: format (size etc.)
+
+![X](figs/token_lengths.png)
+
+: Figure X
+
 Using hyperparameter optimization we tried three different configurations of 90, 100 and 128 as the maximum sequence length.
 Any profile description longer than this would be cut at the maximum length and every description shorter than this would be filled up to this maximum length using a special padding token.
 
@@ -242,18 +256,33 @@ First the model was trained on the training set.
 During this, a hyperparameter search was used to find the ideal hyperparameter configuration.
 The hyperparameters used and the corresponding search spaces are shown in Table X (TODO).
 
-| Dataset | Learning Rate  | Momentum | Batch Size | Sequence Length |
-|:-------:|:--------------:|:--------:|:----------:|:---------------:|
-| boston  | 0.0088         | 0.4863   |  33        |    100          |
-| brussels| 0.0837         | 0.5388   |  60        |    100          |
-| quebec  | 0.0646         | 0.6405   |  15        |    128          |
-| random  | 0.0429         | 0.7009   |  21        |    100          |
+|    Parameter     | Search Space     |
+|:----------------:|:-----------------|
+|  Learning Rate   | [1e-5 ; 1e-1]    |
+|     Momentum     | [0.01; 0.99]     |
+|    Batch Size    | [4 ; 64]         |
+| Sequence Length  | [90 , 100 , 128] |
+
+: The parameters and their corresponding search spaces used in the HPO
 
 
 
 For hyperparameter optimization, the *HyperbandPruner* from the optuna library was used, taking the validation loss as the evaluation criterion.
 Due to computational limitations, the search went on for 10 trials and 40 epochs per dataset (*boston*, *brussels*, *mesa*, *quebec*, and *random*).
 A more thorough investigation over more epochs and more trials would likely result in a more optimal configuration than the one we found.
+
+The results of the hyperparameter search are shown in Table X.
+
+| Dataset | Learning Rate | Momentum | Batch Size | Sequence Length |
+|:-------:|:--------------|:---------|:-----------|:----------------|
+| boston  | 0.0088        | 0.4863   | 33         | 100             |
+| brussels| 0.0837        | 0.5388   | 60         | 100             |
+| quebec  | 0.0646        | 0.6405   | 15         | 128             |
+| random  | 0.0429        | 0.7009   | 21         | 100             |
+
+: The optimal hyperparameters based on the HPO
+
+
 
 Once the best hyperparameter configuration was identified, within each dataset, a model was trained on the training data and tested on the test data.
 The maximum number of epochs for training was 500.
@@ -279,62 +308,48 @@ The results of the study are presented in the next section.
 |:-------:|:--------:|:----:|:-----:|:------:|:------:|
 | boston  | boston   |      |       |        |        |
 |         | brussels |      |       |        |        |
-|         | mesa     |      |       |        |        |
 |         | quebec   |      |       |        |        |
 |         | random   |      |       |        |        |
 | brussels| boston   |      |       |        |        |
 |         | brussels |      |       |        |        |
-|         | mesa     |      |       |        |        |
 |         | quebec   |      |       |        |        |
 |         | random   |      |       |        |        |
 | mesa    | boston   |      |       |        |        |
 |         | brussels |      |       |        |        |
-|         | mesa     |      |       |        |        |
 |         | quebec   |      |       |        |        |
 |         | random   |      |       |        |        |
 | quebec  | boston   |      |       |        |        |
 |         | brussels |      |       |        |        |
-|         | mesa     |      |       |        |        |
 |         | quebec   |      |       |        |        |
 |         | random   |      |       |        |        |
 | random  | boston   |      |       |        |        |
 |         | brussels |      |       |        |        |
-|         | mesa     |      |       |        |        |
 |         | quebec   |      |       |        |        |
 |         | random   |      |       |        |        |
 
 : Our study's results
 
 
-| Train   | Test     |  A   |  P   |  R   |  F1  |
-|:-------:|:--------:|:----:|:----:|:----:|:----:|
-| mesa    | mesa     | .942 | .953 | .979 | .966 |
-|         | boston   | .655 | .628 | .989 | .768 |
-|         | brussels | .774 | .767 | .983 | .861 |
-|         | quebec   | .887 | .894 | .989 | .939 |
-|         | random   | .802 | .848 | .933 | .889 |
-| boston  | boston   | .830 | .836 | .877 | .856 |
-|         | brussels | .736 | .876 | .736 | .800 |
-|         | mesa     | .850 | .969 | .848 | .904 |
-|         | quebec   | .806 | .923 | .851 | .886 |
-|         | random   | .685 | .852 | .760 | .803 |
-| brussels| brussels | .828 | .874 | .889 | .881 |
-|         | boston   | .794 | .762 | .935 | .840 |
-|         | mesa     | .867 | .942 | .897 | .919 |
-|         | quebec   | .869 | .919 | .934 | .926 |
-|         | random   | .704 | .859 | .778 | .817 |
-| quebec  | quebec   | .889 | .914 | .966 | .939 |
-|         | brussels | .811 | .827 | .931 | .876 |
-|         | boston   | .770 | .732 | .950 | .827 |
-|         | mesa     | .879 | .903 | .959 | .930 |
-|         | random   | .792 | .848 | .919 | .882 |
-| random  | random   | .743 | .867 | .827 | .847 |
-|         | brussels | .616 | .751 | .714 | .732 |
-|         | boston   | .586 | .636 | .764 | .694 |
-|         | mesa     | .704 | .863 | .755 | .806 |
-|         | quebec   | .677 | .897 | .725 | .802 |
+| Train   |   Test    | A    | P    | R    | F1   |
+|:-------:|:---------:|:-----|:-----|:-----|:-----|
+| boston  |  boston   | .830 | .836 | .877 | .856 |
+|         | brussels  | .736 | .876 | .736 | .800 |
+|         |  quebec   | .806 | .923 | .851 | .886 |
+|         |  random   | .685 | .852 | .760 | .803 |
+| brussels| brussels  | .828 | .874 | .889 | .881 |
+|         |  boston   | .794 | .762 | .935 | .840 |
+|         |  quebec   | .869 | .919 | .934 | .926 |
+|         |  random   | .704 | .859 | .778 | .817 |
+| quebec  |  quebec   | .889 | .914 | .966 | .939 |
+|         | brussels  | .811 | .827 | .931 | .876 |
+|         |  boston   | .770 | .732 | .950 | .827 |
+|         |  random   | .792 | .848 | .919 | .882 |
+| random  |  random   | .743 | .867 | .827 | .847 |
+|         | brussels  | .616 | .751 | .714 | .732 |
+|         |  boston   | .586 | .636 | .764 | .694 |
+|         |  quebec   | .677 | .897 | .725 | .802 |
 
-: The original study's results using a random forrest classifier (cite Kwon et al-.
+: The original study's results using a random forrest classifier (cite Kwon et al) TODO: fat print results where I am better
 
 
 
@@ -343,6 +358,7 @@ The results of the study are presented in the next section.
 - why did this work? what does it mean
 - why did it not work?
 - what could be improved?
+- takeaway also for other classifiers incorporating more information
 
     - more thorough hyperparameter search
     - retrain top layers of bert model
@@ -350,3 +366,17 @@ The results of the study are presented in the next section.
     - try different optimizers
     - try stopword removal
     -
+
+# Sources
+
+All the data and code used to create this report can be found at TODO
+
+
+#TODO: make code beautiful for github
+#TODO: include comments
+#TODO: update yml
+#TODO: rename yml to env.yml
+#TODO: create citations
+#TODO: format report to make it look nice
+#TODO: replace Table numbers
+

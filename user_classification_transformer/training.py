@@ -34,7 +34,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 flags.DEFINE_boolean('debug', False, '')
 #TODO: set number of epochs
-flags.DEFINE_integer('epochs', 500, '')
+flags.DEFINE_integer('epochs', 400, '')
 #flags.DEFINE_integer('batch_size', 10, '')
 #flags.DEFINE_float('lr', '1e-3', '')
 #flags.DEFINE_float('momentum', '.9', '')
@@ -401,10 +401,10 @@ def main(_):
             print("    {}: {}".format(key, value))
 
     elif FLAGS.mode == 'test':
-        lr=0.042889952348328146
-        momentum=0.7008668763590266
-        batch_size=21
-        seq_length=100
+        lr=0.06456310943573725
+        momentum=0.6404887117236314
+        batch_size=15
+        seq_length=128
 
         model = UserClassifier(
             lr=lr,
@@ -413,29 +413,11 @@ def main(_):
             seq_length=seq_length
         )
 
-        '''
-        now = datetime.now()
-        dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-        print(dt_string)
-        '''
-
         tb_logger = TensorBoardLogger(f'logs/{FLAGS.mode}/{FLAGS.train_ds}/',
                                       name=f"test={FLAGS.test_ds}_epochs={FLAGS.epochs}_lr={lr}_m={momentum}_bs={batch_size}_seq_l={seq_length}",
                                       version=0
                                       )
-        
-        '''
-        checkpoint_callback = ModelCheckpoint(
-            dirpath=f'logs/{FLAGS.mode}/{FLAGS.train_ds}',
-            filename=f'epochs={FLAGS.epochs}_lr={lr}_m={momentum}_bs={batch_size}_seq_l={seq_length}.ckpt',
-            save_top_k=1,
-            monitor='val_loss',
-            mode='min',
-            every_n_epochs=2,
-            save_on_train_epoch_end=True
-        )
 
-        '''
 
         trainer = pl.Trainer(
             default_root_dir='logs',
@@ -447,17 +429,17 @@ def main(_):
             checkpoint_callback=False
         )
 
-        trainer.fit(model)
+        #trainer.fit(model)
 
         model_save_path = f'logs/models/full/{FLAGS.mode}/{FLAGS.train_ds}_epochs={FLAGS.epochs}_lr={lr}_m={momentum}_bs={batch_size}_seq_l={seq_length}.ckpt'
         classifier_save_path = f'logs/models/classifier/{FLAGS.mode}/{FLAGS.train_ds}_epochs={FLAGS.epochs}_lr={lr}_m={momentum}_bs={batch_size}_seq_l={seq_length}.ckpt'
 
         #save the model
-        trainer.save_checkpoint(model_save_path)
+        #trainer.save_checkpoint(model_save_path)
 
         #save the classifier
-        classifier_only = th.nn.Sequential(model.classifier)
-        th.save(classifier_only, classifier_save_path)
+        #classifier_only = th.nn.Sequential(model.classifier)
+        #th.save(classifier_only, classifier_save_path)
 
         #load the classifier
         my_classifier = th.load(classifier_save_path)
@@ -465,6 +447,7 @@ def main(_):
 
         #test the model
         trainer.test(model)
+
 
 
 
