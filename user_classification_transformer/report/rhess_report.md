@@ -304,28 +304,24 @@ The results of the study are presented in the next section.
 - present results (compared to original authors' results)
 
 
-| Train   | Test     | A    | P     |    R   |    F1  |
-|:-------:|:--------:|:----:|:-----:|:------:|:------:|
-| boston  | boston   |      |       |        |        |
-|         | brussels |      |       |        |        |
-|         | quebec   |      |       |        |        |
-|         | random   |      |       |        |        |
-| brussels| boston   |      |       |        |        |
-|         | brussels |      |       |        |        |
-|         | quebec   |      |       |        |        |
-|         | random   |      |       |        |        |
-| mesa    | boston   |      |       |        |        |
-|         | brussels |      |       |        |        |
-|         | quebec   |      |       |        |        |
-|         | random   |      |       |        |        |
-| quebec  | boston   |      |       |        |        |
-|         | brussels |      |       |        |        |
-|         | quebec   |      |       |        |        |
-|         | random   |      |       |        |        |
-| random  | boston   |      |       |        |        |
-|         | brussels |      |       |        |        |
-|         | quebec   |      |       |        |        |
-|         | random   |      |       |        |        |
+| Train   |   Test   |     A     |     P     |     R     |    F1     |
+|:-------:|:--------:|:---------:|:---------:|:---------:|:---------:|
+| boston  |  boston  |   .803    |   .777    | **.951**  |   .855    |
+|         | brussels | **.817**  |   .837    | **.924**  | **.878**  |
+|         |  quebec  | **.923**  | **.951**  | **.966**  | **.958**  |
+|         |  random  | **.863**  | **.874**  | **.980**  | **.924**  |
+| brussels| brussels | **.839**  |   .851    | **.939**  | **.893**  |
+|         |  boston  | **.812**  | **.777**  | **.971**  | **.863**  |
+|         |  quebec  | **.932**  | **.951**  | **.975**  | **.963**  |
+|         |  random  | **.873**  | **.892**  | **.968**  | **.928**  |
+| quebec  |  quebec  | **.935**  | **.941**  | **.991**  | **.965**  |
+|         | brussels |   .781    |   .783    | **.962**  |   .863    |
+|         |  boston  |   .731    |   .700    | **.981**  |   .817    |
+|         |  random  | **.860**  | **.861**  | **.997**  | **.924**  |
+| random  |  random  | **.873**  | **.903**  | **.953**  | **.927**  |
+|         | brussels | **.754**  | **.895**  | **.744**  | **.813**  |
+|         |  boston  | **.719**  | **.725**  | **.873**  | **.792**  |
+|         |  quebec  | **.775**  | **.955**  | **.791**  | **.865**  |
 
 : Our study's results
 

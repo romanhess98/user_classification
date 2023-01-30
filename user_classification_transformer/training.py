@@ -401,10 +401,10 @@ def main(_):
             print("    {}: {}".format(key, value))
 
     elif FLAGS.mode == 'test':
-        lr=0.06456310943573725
-        momentum=0.6404887117236314
-        batch_size=15
-        seq_length=128
+        lr=0.042889952348328146
+        momentum=0.7008668763590266
+        batch_size=21
+        seq_length=100
 
         model = UserClassifier(
             lr=lr,
