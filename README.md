@@ -11,7 +11,8 @@ To the best of our knowledge, none of them have used transformers and transfer l
 In our work, we attempted to beat the performance of an [existing study](https://doi.org/10.1080/19312458.2018.1430755) using solely Twitter profile descriptions as input, for classifying users into the two groups.
 To achieve this, we used  [BERTweet](https://github.com/VinAIResearch/BERTweet), a pretrained transformer model to obtain useful features. 
 These were then fed into a dense, one-layer classification head.
-Results were mixed, with performance improvements in many cases, but worse performance in others. A more thorough hyperparameter search might further improve the results in the future.
+Results were mixed, with performance improvements in many cases, but worse performance in others. A more thorough hyperparameter search might further improve the results in the future. 
+For more details, please refer to the report included in this repository.
 
 
 # Table of contents

@@ -1,3 +1,7 @@
+'''
+This file was only used for the creation of Figure 1 in the report.
+'''
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -14,6 +18,3 @@ plt.ylabel('Frequency')
 plt.savefig('report/figs/token_lengths.png')
 
 plt.show()
-
-#save plot
-
