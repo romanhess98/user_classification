@@ -162,6 +162,7 @@ def replace_duplicates_with_majority_case(dataframe: pd.DataFrame) -> pd.DataFra
     print(dataframe.shape)
     dataframe.drop_duplicates(subset=['description'], keep=False, inplace=True, ignore_index=True)
     print(dataframe.shape)
+    
     # for each duplicate
     # count the number of label=0 and label=1
     prc = tmp.groupby(by=['description'], as_index=False).mean(numeric_only=True)
