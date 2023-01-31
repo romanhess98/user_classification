@@ -136,16 +136,16 @@ As inconsistent labels can hurt machine learning, we decided to handle these cas
 First we split the dataset into the five smaller datasets based on the *source* column.
 Then, under the assumption that the majority label is the correct one, we replaced multiple occurrences of the same profile description with a single row containing the description and the majority class as label.
 An equal amount of positive and negative ratings resulted in the assignment of the positive class (1).
-The dataset sizes before and after cleaning are shown in Table X.
+The dataset sizes before and after cleaning are shown in @tbl-sizes.
 
 | Dataset | Before | After |
-|:-------:|:-------|:------|
+|:-------|:-------|:------|
 | boston  | 2000   | 1675  |
 | brussels| 1997   | 1997  |
 | quebec  | 1998   | 1751  |
 | random  | 2021   | 2003  |
 
-: Dataset sizes before and after cleaning
+: Dataset sizes before and after cleaning {#tbl-sizes}
 
 
 In a last step each of the five datasets was split into a training, validation, and test set.
@@ -173,13 +173,13 @@ into the following tokens:
  'a', 'snow@@', 'fla@@', 'ke@@', '.', '#TheResistance', '#ImpeachTrump'.
 
 Tokens in this case are not always whole words but smaller parts of words.
-A syllable following another inside the same word is indicated by an *@*-symbol.
+A syllable following another inside the same word is indicated by an *\@*-symbol.
 Inputs not understood by the tokenizer receive a special *unknown*-token.
 When using BERTweet, one has to decide on a maximum input length to feed to the model.
 The largest length (meaning the number of tokens) the model can take is 128.
-The distribution of the number of tokens per profile description in all five datasets is shown in Figure 1.
+The distribution of the number of tokens per profile description in all five datasets is shown in @fig-token.
 
-![**Figure 1**: Distribution over token lengths in the full dataset](figs/token_lengths.png)
+![Distribution over token lengths in the full dataset](figs/token_lengths.png){#fig-token}
 
 Using hyperparameter optimization we tried three different configurations of 90, 100 and 128 as the maximum sequence length.
 Any profile description longer than this would be cut at the maximum length and every description shorter than this would be filled up to this maximum length using a special padding token.
@@ -199,22 +199,22 @@ For training, the Pytorch Lightning library was used together with huggingface's
 The creation of our study's results consisted of two parts.
 First the model was trained on the training set.
 During this, a hyperparameter search was used to find the ideal hyperparameter configuration.
-The hyperparameters used and the corresponding search spaces are shown in Table X (TODO).
+The hyperparameters used and the corresponding search spaces are shown in @tbl-search_spaces.
 
 |    Parameter     | Search Space     |
-|:----------------:|:-----------------|
+|:----------------|:-----------------|
 |  Learning Rate   | [1e-5 ; 1e-1]    |
 |     Momentum     | [0.01; 0.99]     |
 |    Batch Size    | [4 ; 64]         |
 | Sequence Length  | [90 , 100 , 128] |
 
-: The parameters and their corresponding search spaces used in the HPO
+: The parameters and their corresponding search spaces used in the HPO {#tbl-search_spaces}
 
 For hyperparameter optimization, the *HyperbandPruner* from the optuna library was used, taking the validation loss as the evaluation criterion.
 Due to computational limitations, the search went on for 10 trials and 40 epochs per dataset (*boston*, *brussels*, *mesa*, *quebec*, and *random*).
 A more thorough investigation over more epochs and more trials would likely result in a more optimal configuration than the one we found.
 
-The results of the hyperparameter search are shown in Table X.
+The results of the hyperparameter search are shown in @tbl-hpo.
 
 | Dataset | Learning Rate | Momentum | Batch Size | Sequence Length |
 |:-------:|:--------------|:---------|:-----------|:----------------|
@@ -223,7 +223,7 @@ The results of the hyperparameter search are shown in Table X.
 | quebec  | 0.0646        | 0.6405   | 15         | 128             |
 | random  | 0.0429        | 0.7009   | 21         | 100             |
 
-: The optimal hyperparameters based on the HPO
+: The optimal hyperparameters based on the HPO {#tbl-hpo}
 
 
 Once the best hyperparameter configuration was identified, within each dataset, a model was trained on the training data and tested on the test data.
@@ -238,7 +238,7 @@ The results of the study are presented in the next section.
 
 # Results
 
-The results of our study are shown Table X. 
+The results of our study are shown in @tbl-results. 
 
 
 | Train   |   Test   |     A     |     P     |     R     |    F1     |
@@ -260,9 +260,9 @@ The results of our study are shown Table X.
 |         |  boston  | **.719**  | **.725**  | **.873**  | **.792**  |
 |         |  quebec  | **.775**  | **.955**  | **.791**  | **.865**  |
 
-: **Table X**: Our study's results. Measures, where our performance exceeds the original study are printed in bold.
+: Our study's results. Measures, where our performance exceeds the original study are printed in bold {#tbl-results}
 
-For comparison, the results of the original study are shown in Table X. 
+For comparison, the results of the original study are shown in @tbl-results_original. 
 
 
 | Train   |   Test    | A    | P    | R    | F1   |
@@ -284,7 +284,7 @@ For comparison, the results of the original study are shown in Table X.
 |         |  boston   | .586 | .636 | .764 | .694 |
 |         |  quebec   | .677 | .897 | .725 | .802 |
 
-: **Table X:** The original study's results using a random forrest classifier [@kwon_disentangling_2018] 
+: The original study's results using a random forrest classifier [@kwon_disentangling_2018] {#tbl-results_original}
 
 To evaluate whether the results support our hypotheses, we have to look at four different performance measures. @kwon_disentangling_2018 measured Accuracy, Precision, Recall, and F1 to evaluate the performance of their model. 
 
@@ -333,9 +333,7 @@ All the data and code used to create this report can be found at TODO
 #TODO: include comments
 #TODO: update yml
 #TODO: rename yml to env.yml
-#TODO: create citations
 #TODO: format report to make it look nice
-#TODO: replace Table numbers
 
 #TODO: read over everything again and make it sound concise.
 #TODO: spell check!

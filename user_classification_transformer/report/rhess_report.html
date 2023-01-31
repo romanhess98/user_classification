@@ -141,49 +141,51 @@ div.csl-indent {
 </section>
 <section id="preprocessing" class="level2">
 <h2 class="anchored" data-anchor-id="preprocessing">Preprocessing</h2>
-<p>In a first step, we cleaned the dataset. The labels were created through manual annotation by different raters. Because of that, the dataset contained some duplicate cases, where the same profile description had received different labels. As inconsistent labels can hurt machine learning, we decided to handle these cases as follows. First we split the dataset into the five smaller datasets based on the <em>source</em> column. Then, under the assumption that the majority label is the correct one, we replaced multiple occurrences of the same profile description with a single row containing the description and the majority class as label. An equal amount of positive and negative ratings resulted in the assignment of the positive class (1). The dataset sizes before and after cleaning are shown in Table X.</p>
+<p>In a first step, we cleaned the dataset. The labels were created through manual annotation by different raters. Because of that, the dataset contained some duplicate cases, where the same profile description had received different labels. As inconsistent labels can hurt machine learning, we decided to handle these cases as follows. First we split the dataset into the five smaller datasets based on the <em>source</em> column. Then, under the assumption that the majority label is the correct one, we replaced multiple occurrences of the same profile description with a single row containing the description and the majority class as label. An equal amount of positive and negative ratings resulted in the assignment of the positive class (1). The dataset sizes before and after cleaning are shown in <a href="#tbl-sizes">Table&nbsp;1</a>.</p>
+<div id="tbl-sizes" class="anchored">
 <table class="table">
-<caption>Dataset sizes before and after cleaning</caption>
+<caption>Table&nbsp;1: Dataset sizes before and after cleaning</caption>
 <thead>
 <tr class="header">
-<th style="text-align: center;">Dataset</th>
+<th style="text-align: left;">Dataset</th>
 <th style="text-align: left;">Before</th>
 <th style="text-align: left;">After</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: center;">boston</td>
+<td style="text-align: left;">boston</td>
 <td style="text-align: left;">2000</td>
 <td style="text-align: left;">1675</td>
 </tr>
 <tr class="even">
-<td style="text-align: center;">brussels</td>
+<td style="text-align: left;">brussels</td>
 <td style="text-align: left;">1997</td>
 <td style="text-align: left;">1997</td>
 </tr>
 <tr class="odd">
-<td style="text-align: center;">quebec</td>
+<td style="text-align: left;">quebec</td>
 <td style="text-align: left;">1998</td>
 <td style="text-align: left;">1751</td>
 </tr>
 <tr class="even">
-<td style="text-align: center;">random</td>
+<td style="text-align: left;">random</td>
 <td style="text-align: left;">2021</td>
 <td style="text-align: left;">2003</td>
 </tr>
 </tbody>
 </table>
+</div>
 <p>In a last step each of the five datasets was split into a training, validation, and test set. In the original paper, <span class="citation" data-cites="kwon_disentangling_2018">Kwon, Priniski, and Chadha (<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">2018</a>)</span> used an 80/20 split to create a training and test set. As using BERTweet requires defining some hyperparameters, we decided to create a validation set as well. Thus, we used a split of 70/10/20 for the training, validation, and test set. Before splitting the data, we randomly shuffled it, to avoid different label distributions between the sets. It would have been advantageous if the train-test split from the original paper had been known to outrule any other reasons for the expected difference in performance when using BERTweet. However, as the original study’s authors used the scikit learn library for training <span class="citation" data-cites="kwon_disentangling_2018">(<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">Kwon, Priniski, and Chadha 2018</a>)</span>, it is likely that they shuffled the data as well before training. Overall, as the shuffling is random, it should not make a real difference.</p>
 <p>##Tokenization BERTweet offers its own tokenizer <span class="citation" data-cites="nguyen_bertweet_2020">(<a href="#ref-nguyen_bertweet_2020" role="doc-biblioref">Nguyen, Vu, and Nguyen 2020</a>)</span>. It is recommended to use it as this is the tokenizer that was used during pretraining. For example, the tokenizer would transform the input:</p>
 <p>‘Feminist. Proud liberal. Pro-love. Colin Morgan fan. Book lover. History geek. Cat person. Chocolate eater. Apparently a snowflake. #TheResistance #ImpeachTrump’</p>
 <p>into the following tokens:</p>
 <p>‘Femin@@’, ‘ist@@’, ‘.’, ‘Proud’, ‘liber@@’, ‘al.’, ‘Pro-@@’, ‘love@@’, ‘.’, ‘Colin’, ‘Morgan’, ‘fan@@’, ‘.’, ‘Book’, ‘lo@@’, ‘ver@@’, ‘.’, ‘History’, ‘gee@@’, ‘k@@’, ‘.’, ‘Cat’, ‘person@@’, ‘.’, ‘Chocolate’, ‘ea@@’, ‘ter@@’, ‘.’, ‘Apparently’, ‘a’, ‘snow@@’, ‘fla@@’, ‘ke@@’, ‘.’, ‘#TheResistance’, ‘#ImpeachTrump’.</p>
-<p>Tokens in this case are not always whole words but smaller parts of words. A syllable following another inside the same word is indicated by an <em><span class="citation" data-cites="*-symbol">(<a href="#ref-*-symbol" role="doc-biblioref"><strong>*-symbol?</strong></a>)</span>. Inputs not understood by the tokenizer receive a special </em>unknown*-token. When using BERTweet, one has to decide on a maximum input length to feed to the model. The largest length (meaning the number of tokens) the model can take is 128. The distribution of the number of tokens per profile description in all five datasets is shown in Figure 1.</p>
-<div class="quarto-figure quarto-figure-center">
+<p>Tokens in this case are not always whole words but smaller parts of words. A syllable following another inside the same word is indicated by an <em>@</em>-symbol. Inputs not understood by the tokenizer receive a special <em>unknown</em>-token. When using BERTweet, one has to decide on a maximum input length to feed to the model. The largest length (meaning the number of tokens) the model can take is 128. The distribution of the number of tokens per profile description in all five datasets is shown in <a href="#fig-token">Figure&nbsp;1</a>.</p>
+<div id="fig-token" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="figs/token_lengths.png" class="img-fluid figure-img"></p>
-<p></p><figcaption class="figure-caption"><strong>Figure 1</strong>: Distribution over token lengths in the full dataset</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: Distribution over token lengths in the full dataset</figcaption><p></p>
 </figure>
 </div>
 <p>Using hyperparameter optimization we tried three different configurations of 90, 100 and 128 as the maximum sequence length. Any profile description longer than this would be cut at the maximum length and every description shorter than this would be filled up to this maximum length using a special padding token.</p>
@@ -195,38 +197,41 @@ div.csl-indent {
 </section>
 <section id="training" class="level2">
 <h2 class="anchored" data-anchor-id="training">Training</h2>
-<p>For training, the Pytorch Lightning library was used together with huggingface’s nlp and transformers libraries. The creation of our study’s results consisted of two parts. First the model was trained on the training set. During this, a hyperparameter search was used to find the ideal hyperparameter configuration. The hyperparameters used and the corresponding search spaces are shown in Table X (TODO).</p>
+<p>For training, the Pytorch Lightning library was used together with huggingface’s nlp and transformers libraries. The creation of our study’s results consisted of two parts. First the model was trained on the training set. During this, a hyperparameter search was used to find the ideal hyperparameter configuration. The hyperparameters used and the corresponding search spaces are shown in <a href="#tbl-search_spaces">Table&nbsp;2</a>.</p>
+<div id="tbl-search_spaces" class="anchored">
 <table class="table">
-<caption>The parameters and their corresponding search spaces used in the HPO</caption>
+<caption>Table&nbsp;2: The parameters and their corresponding search spaces used in the HPO</caption>
 <thead>
 <tr class="header">
-<th style="text-align: center;">Parameter</th>
+<th style="text-align: left;">Parameter</th>
 <th style="text-align: left;">Search Space</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: center;">Learning Rate</td>
+<td style="text-align: left;">Learning Rate</td>
 <td style="text-align: left;">[1e-5 ; 1e-1]</td>
 </tr>
 <tr class="even">
-<td style="text-align: center;">Momentum</td>
+<td style="text-align: left;">Momentum</td>
 <td style="text-align: left;">[0.01; 0.99]</td>
 </tr>
 <tr class="odd">
-<td style="text-align: center;">Batch Size</td>
+<td style="text-align: left;">Batch Size</td>
 <td style="text-align: left;">[4 ; 64]</td>
 </tr>
 <tr class="even">
-<td style="text-align: center;">Sequence Length</td>
+<td style="text-align: left;">Sequence Length</td>
 <td style="text-align: left;">[90 , 100 , 128]</td>
 </tr>
 </tbody>
 </table>
+</div>
 <p>For hyperparameter optimization, the <em>HyperbandPruner</em> from the optuna library was used, taking the validation loss as the evaluation criterion. Due to computational limitations, the search went on for 10 trials and 40 epochs per dataset (<em>boston</em>, <em>brussels</em>, <em>mesa</em>, <em>quebec</em>, and <em>random</em>). A more thorough investigation over more epochs and more trials would likely result in a more optimal configuration than the one we found.</p>
-<p>The results of the hyperparameter search are shown in Table X.</p>
+<p>The results of the hyperparameter search are shown in <a href="#tbl-hpo">Table&nbsp;3</a>.</p>
+<div id="tbl-hpo" class="anchored">
 <table class="table">
-<caption>The optimal hyperparameters based on the HPO</caption>
+<caption>Table&nbsp;3: The optimal hyperparameters based on the HPO</caption>
 <thead>
 <tr class="header">
 <th style="text-align: center;">Dataset</th>
@@ -267,15 +272,17 @@ div.csl-indent {
 </tr>
 </tbody>
 </table>
+</div>
 <p>Once the best hyperparameter configuration was identified, within each dataset, a model was trained on the training data and tested on the test data. The maximum number of epochs for training was 500. Also, an early stopping mechanism had been implemented. The model would train until the validation loss did not increase anymore for ten epochs. Then the model parametrization from the epoch with the lowest validation loss would be used for testing on the test dataset.</p>
 <p>Our evaluation criteria for the test set were the same as in the original study. We measures accuracy, precision, recall, and F1 score. The results of the study are presented in the next section.</p>
 </section>
 </section>
 <section id="results" class="level1">
 <h1>Results</h1>
-<p>The results of our study are shown Table X.</p>
+<p>The results of our study are shown in <a href="#tbl-results">Table&nbsp;4</a>.</p>
+<div id="tbl-results" class="anchored">
 <table class="table">
-<caption><strong>Table X</strong>: Our study’s results. Measures, where our performance exceeds the original study are printed in bold.</caption>
+<caption>Table&nbsp;4: Our study’s results. Measures, where our performance exceeds the original study are printed in bold</caption>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Train</th>
@@ -417,9 +424,11 @@ div.csl-indent {
 </tr>
 </tbody>
 </table>
-<p>For comparison, the results of the original study are shown in Table X.</p>
+</div>
+<p>For comparison, the results of the original study are shown in <a href="#tbl-results_original">Table&nbsp;5</a>.</p>
+<div id="tbl-results_original" class="anchored">
 <table class="table">
-<caption><strong>Table X:</strong> The original study’s results using a random forrest classifier <span class="citation" data-cites="kwon_disentangling_2018">(<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">Kwon, Priniski, and Chadha 2018</a>)</span></caption>
+<caption>Table&nbsp;5: The original study’s results using a random forrest classifier <span class="citation" data-cites="kwon_disentangling_2018">(<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">Kwon, Priniski, and Chadha 2018</a>)</span></caption>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Train</th>
@@ -561,6 +570,7 @@ div.csl-indent {
 </tr>
 </tbody>
 </table>
+</div>
 <p>To evaluate whether the results support our hypotheses, we have to look at four different performance measures. <span class="citation" data-cites="kwon_disentangling_2018">Kwon, Priniski, and Chadha (<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">2018</a>)</span> measured Accuracy, Precision, Recall, and F1 to evaluate the performance of their model.</p>
 <p>To simplify our hypotheses, we expected improvements in all four measures by using transformers and transfer learning.</p>
 <p>As to <em>H1.A</em>, our expectation did not hold. Only Recall is improved compared to the original study, the other measures show lower values.</p>
@@ -585,7 +595,7 @@ div.csl-indent {
 <section id="sources" class="level1">
 <h1>Sources</h1>
 <p>All the data and code used to create this report can be found at TODO</p>
-<p>#TODO: make code beautiful for github #TODO: include comments #TODO: update yml #TODO: rename yml to env.yml #TODO: create citations #TODO: format report to make it look nice #TODO: replace Table numbers</p>
+<p>#TODO: make code beautiful for github #TODO: include comments #TODO: update yml #TODO: rename yml to env.yml #TODO: format report to make it look nice #TODO: replace Table numbers</p>
 <p>#TODO: read over everything again and make it sound concise. #TODO: spell check! #TODO: in the end check if figures are numbered correctly after rendering to pdf/html!!!</p>
 
 </section>
