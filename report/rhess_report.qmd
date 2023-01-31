@@ -2,7 +2,7 @@
 title: "Improving the Classification of General Public and Institutional Twitter Users with Transformers"
 author: Roman Heß
 date: 2023-01-31
-abstract: "Several classifiers exist for differentiating general public and institutional Twitter users. To the best of our knowledge, none of them have used transformers and transfer learning to create predictions out of text data. In our work, we attempted to beat the performance of an existing study using solely Twitter profile descriptions as input, for classifying users into the two groups. To achieve this, we used BERTweet, a pretrained transformer model to obtain useful features. These were then fed into a dense, one-layer classification head. Results were mixed, with performance improvements in many cases, but worse performance in others. A more thorough hyperparameter search might further improve the results in the future."
+abstract: "Several classifiers exist for differentiating general public and institutional Twitter users. To the best of our knowledge, none of them have used transformers and transfer learning to create predictions from text data. In our work, we attempted to beat the performance of an existing study using solely Twitter profile descriptions as input, for classifying users. To achieve this, we used BERTweet, a pretrained transformer model to obtain useful features. These were then fed into a dense one-layer classification head. Results were mixed, with performance improvements in many cases, but worse performance in others. A more thorough hyperparameter search might further improve the results in the future."
 bibliography: references.bib
 format:
   html:
@@ -15,29 +15,29 @@ jupyter: python3
 Twitter is an interesting data source for computational communication scientists.
 The Twitter API makes it comparably easy to obtain large amounts of text data.
 This enables Big Data analyses for various purposes, but comes with its own challenges.
-For example, Twitter users might not be representative of the general offline population.
-Also, some twitter accounts might be fictious [@ahmed_using_2017].
-Especially the detection of bots has triggered a lot of research [e.g. @kudugunta_deep_2018].
-When researchers analyze Twitter data, they may want to exclude these cases from their datasets.
-Or they might also want to isolate users from a certain country [@kwon_disentangling_2018] or gender [@vashisth_gender_2020], depending on the research questions.
+For example, Twitter users might not be representative of the general offline population,
+some Twitter accounts might even be fictious [@ahmed_using_2017].
+Additionally, the detection of bots has triggered a lot of research [e.g. @kudugunta_deep_2018].
+When researchers analyze Twitter data, they may want to exclude these cases from their datasets. In other cases, they might want to isolate users from a certain country [@kwon_disentangling_2018] or gender [@vashisth_gender_2020], depending on the particular research questions.
 
 Another differentiation between Twitter users, which can potentially impact the findings of a given research question is the separation of general public and institutional users.
 Institutional accounts differ from general public accounts in that they might represent a (governmental) institution, the media, or some other kind of organization.
-Communication on Twitter can be social or non-social and spontaneous or strategic.
+Generally, communication on Twitter can be social or non-social and spontaneous or strategic.
 When researchers are mainly interested in natural communication between individuals, they might want to filter out the institutional users first [@kwon_disentangling_2018].
 This filtering can also be helpful for recommendation engines, products opinion mining tools etc. [@daouadi_organization_2018].
-As institutional accounts make up 9% of Twitter accounts [@mccorriston_organizations_2015] they can skew the Tweet sample significantly.
+As institutional accounts make up 9% of Twitter accounts [@mccorriston_organizations_2015] they can skew a given sample of Tweets significantly.
 
 Defining who is a general public and who is an institutional user is not trivial and different approaches exist in the literature.
 @li_hybrid_2018 aimed at differentiating between male, female and *brand-related* Twitter users.
-@yan_classifying_2013 differentiate between *open* and *closed* accounts, where open accounts publish information to the public, with their goal being to promote products, services or themselves.
+@yan_classifying_2013 detected *open* and *closed* accounts, where open accounts publish information to the public, with their goal being to promote products, services or themselves.
 Closed accounts on the other hand publish information about their daily lives and use Twitter to communicate with their friends.
 @mccorriston_organizations_2015  created a tool to distinguish between organizational and individual accounts but did not define their definition of *organizational* in detail.
 Lastly, @de_choudhury_unfolding_2012 split Twitter users into ordinary individuals, organizations, and journalists/media bloggers.
+
 The existing diversity and opacity in defining user categories is not ideal.
 There is potential for a unified system of deciding which users belong to which group to make it easier for researchers to filter out institutional users and make research more comparable.
 
-Some differences between institutional and general public users have been highlighted by @kwon_disentangling_2018.
+Some actual differences between institutional and general public users have been highlighted by @kwon_disentangling_2018.
 In their study, general public users showed more retweeting than institutional users, less analytic language use and more affective language use.
 
 Overall, for the above mentioned reasons, there is a need for reliable classification models, allowing researchers to filter out institutional accounts when their target sample should only contain general public users.
@@ -48,17 +48,17 @@ Several techniques for this purpose have already been introduced. They will be p
 
 ## Existing Classifiers
 
-@li_hybrid_2018 introduced TWIROLE, which uses Twitter users' name, description, the Follower-Friend Ratio, profile image and Tweets as features for a hybrid classifier.
+@li_hybrid_2018 introduced TWIROLE, which uses Twitter users' name, description, the follower-friend ratio, profile image and Tweets as features for a hybrid classifier.
 The text features are rather simple and frequency based in this case.
 
 @mccorriston_organizations_2015 used post content, stylistic as well as structural and behavioral features for their classifier.
-The text features they implemented were mostly frequency-based, the other features were numerical.
+The text features they implemented were mostly frequency-based, the other non-text features were numerical.
 All features were then fed into a support vector machine for classification
 
 @daouadi_organization_2018 did not use textual features at all.
 Their features were solely statistical-based and included measures like the number of followers, liked tweets, posts per day etc.
 
-@kwon_disentangling_2018 trained a classifier solely based on twitter profile descriptions.
+@kwon_disentangling_2018 trained a classifier solely based on Twitter profile descriptions.
 They used the sci-kit learn package in python and their representations of each profile text only considered the 500 most frequent terms in the data.
 Thus the representation of each profile text was a 500 dimensional sparse vector containing the raw frequencies for the top 500 most frequent words.
 A random forest classifier was then used to separate general public profiles from institutional accounts.
@@ -66,33 +66,31 @@ A random forest classifier was then used to separate general public profiles fro
 None of the approaches we could find used dense (pretrained) text embeddings or transformers.
 However, using such techniques yields high potential when working with natural language, as can be found in Twitter data.
 
-@wankmuller_introduction_2022 illustrated this potential of Neural Transfer Learning using transformers for text analysis in the social sciences.
+@wankmuller_introduction_2022 illustrated this potential of neural transfer learning using transformers for text analysis in the social sciences.
 Transfer learning refers to a setting where something that has been learned in one situation is exploited in another situation [@goodfellow_deep_2016].
-For Transformer models such as BERT or RoBERTa, pretrained weights and token embeddings are freely available online.
+For transformer models such as BERT or RoBERTa, pretrained weights and token embeddings are freely available online.
 These models have been trained with enormous amounts of data on well-designed pretraining tasks.
 Researchers can use these pretrained encoders to obtain dense representations of their text data.
-These features usually contain far more information than conventional, more simple text representations, as they use the knowledge inherent in the huge text corpora used for pretraining the transformer models.
-They can then be fed into a smaller model which is then trained on the actual task the researcher is interested in.
-
-This can improve the prediction performance on different NLP tasks [@wankmuller_introduction_2022].
+These features can then contain more information than conventional, more simple text representations, as they use the knowledge inherent in the huge text corpora used for pretraining the transformer models.
+They can then be fed into a smaller model which is then trained on the actual task the researcher is interested in. This can improve the prediction performance on different NLP tasks [@wankmuller_introduction_2022].
 
 ## Study Goal
 
-We believe that this also holds for the task of Twitter user classification into general public and institutional users.
+We believe that the advantage of using transformers with transfer learning also holds for the task of Twitter user classification into general public and institutional users.
 When text data is available, it is reasonable to expect that the usage of pretrained word embeddings and encoders can leverage performance.
-Using a pretrained BERT model is especially promising in our case, because of the availability of BERTweet, which is based on the RoBERTa pre-training procedure.
-It has been trained on 850 million English Tweets and consists of 135 million parameters [@nguyen_bertweet_2020].
+Using a pretrained BERT model is especially promising in our case, because of the availability of BERTweet, which is based on the RoBERTa pre-training procedure and has been trained on 850 million English Tweets. It is very large, consisting of 135 million parameters [@nguyen_bertweet_2020].
 
 The goal of this work is to show the advantages of transformer models over conventional machine learning techniques in user classification.
-In order to do that we tried to locate the datasets used by previous classification models and surpass the original authors' performance by using BERTweet for generating text features.
-The only dataset we could find was that used by @kwon_disentangling_2018, who used Twitter profile descriptions as the sole input for their classifier.
+In order to do that we tried to locate the datasets used by previous classification models and attempted to surpass the original authors' performance by using BERTweet for generating text features.
+The only dataset used for training the presented classifiers we could find available online was that used by @kwon_disentangling_2018, who used Twitter profile descriptions as the sole input for their classifier.
+
 To be precise, the authors used five different datasets which were collected in the context of different events (*boston*, *brussels*, *mesa*, *quebec*, *random*).
 They trained one model per dataset and then evaluated the performances within the same dataset as well as the classifiers' generalization across the other datasets.
 
 ## Hypotheses
 
-As the profile descriptions are the only input used, we expect BERTweet to enable a better performance than in the original study.
-Thus, we define our hypotheses as follows:
+As the profile descriptions are the only input used, we expected BERTweet to achieve a better performance than the classifier in the original study.
+Thus, we defined our hypotheses as follows:
 
 By designing our own classifier, using the BERTweet encoder to generate dense and meaningful representations of Twitter profile descriptions, we expect to achieve:
 
@@ -117,17 +115,17 @@ _H4.B_: a better performance on all other test sets, when trained on the *random
 
 ## Data
 The dataset used by @kwon_disentangling_2018 consisted of three variables.
-The first column contained the Twitter profile descriptions as strings.
+The first column *description* contained the Twitter profile descriptions as strings.
 The second column *is_gen_pub* listed the labels (institutional=0, general public=1).
 The third column contained the *source* and thus allowed to split the dataset into the five smaller datasets *boston*, *brussels*, *mesa*, *quebec*, and *random*.
 
 Overall the dataset consisted of 8945 cases.
 Out of those, 2000 belonged to the *boston* dataset, 2008 to *brussels*, 918 to *mesa*, 1998 to *quebec* and 2021 to *random*.
-Unfortunately, we spotted an error in the mesa data.
+Unfortunately, we spotted an error in the *mesa* data.
 All annotations carried the label 1, and there were no negative cases.
 Thus, we decided, to remove the mesa data from our analysis.
 This sparked doubt about the reliability of the other datasets as well.
-However, for the other sources, the distribution of positive and negative cases matched the description of the authors making them seem reliable enough for us to analyze.
+However, for the other sources, the distribution of positive and negative cases matched the description of @kwon_disentangling_2018 making them seem reliable enough for us to analyze.
 
 
 ## Preprocessing
@@ -149,17 +147,17 @@ The dataset sizes before and after cleaning are shown in @tbl-sizes.
 : Dataset sizes before and after cleaning {#tbl-sizes}
 
 
-In a last step each of the five datasets was split into a training, validation, and test set.
+In the last step, each of the five datasets was split into a training, validation, and test set.
 In the original paper, @kwon_disentangling_2018 used an 80/20 split to create a training and test set.
 As using BERTweet requires defining some hyperparameters, we decided to create a validation set as well.
 Thus, we used a split of 70/10/20 for the training, validation, and test set.
 Before splitting the data, we randomly shuffled it, to avoid different label distributions between the sets.
 It would have been advantageous if the train-test split from the original paper had been known to rule out any other reasons for the expected difference in performance when using BERTweet.
-However, as the original study's authors used the scikit learn library for training []@kwon_disentangling_2018], it is likely that they shuffled the data as well before training.
-Overall, as the shuffling is random, it should not make a real difference.
+However, as @kwon_disentangling_2018 used the scikit learn library for training, it is likely that they shuffled the data as well before training.
+Overall, as the shuffling is random, it should not make a big difference.
 
 
-##Tokenization
+## Tokenization
 BERTweet offers its own tokenizer [@nguyen_bertweet_2020].
 It is recommended to use it as this is the tokenizer that was used during pretraining.
 For example, the tokenizer would transform the input:
@@ -173,14 +171,14 @@ into the following tokens:
 'lo@@', 'ver@@', '.', 'History', 'gee@@', 'k@@', '.', 'Cat', 'person@@', '.', 'Chocolate', 'ea@@', 'ter@@', '.', 'Apparently',
  'a', 'snow@@', 'fla@@', 'ke@@', '.', '#TheResistance', '#ImpeachTrump'.
 
-Tokens in this case are not always whole words but smaller parts of words.
-A syllable following another inside the same word is indicated by an *\@*-symbol.
+Tokens in this case are not always whole words but can be smaller parts of words.
+A token continued by another that is still inside the same word is indicated by an *\@*-symbol.
 Inputs not understood by the tokenizer receive a special *unknown*-token.
 When using BERTweet, one has to decide on a maximum input length to feed to the model.
 The largest length (meaning the number of tokens) the model can take is 128.
 The distribution of the number of tokens per profile description in all five datasets is shown in @fig-token.
 
-![Distribution over token lengths in the full dataset](figs/token_lengths.png){#fig-token}
+![Distribution of token lengths in the full dataset](figs/token_lengths.png){#fig-token}
 
 Using hyperparameter optimization we tried three different configurations of 90, 100 and 128 as the maximum sequence length.
 Any profile description longer than this would be cut at the maximum length and every description shorter than this would be filled up to this maximum length using a special padding token.
@@ -199,8 +197,8 @@ The parameters of BERTweet remained unchanged throughout the training process.
 For training, the PyTorch Lightning library was used together with huggingface's nlp and transformers libraries.
 The creation of our study's results consisted of two parts.
 First the model was trained on the training set.
-During this, a hyperparameter search was used to find the ideal hyperparameter configuration.
-The hyperparameters used and the corresponding search spaces are shown in @tbl-search_spaces.
+During this, a hyperparameter search was conducted to find the ideal hyperparameter configuration.
+The hyperparameters and their corresponding search spaces are shown in @tbl-search_spaces.
 
 |    Parameter     | Search Space     |
 |:----------------|:-----------------|
@@ -212,13 +210,13 @@ The hyperparameters used and the corresponding search spaces are shown in @tbl-s
 : The parameters and their corresponding search spaces used in the HPO {#tbl-search_spaces}
 
 For hyperparameter optimization, the *HyperbandPruner* from the optuna library was used, taking the validation loss as the evaluation criterion.
-Due to computational limitations, the search went on for 10 trials and 40 epochs per dataset (*boston*, *brussels*, *mesa*, *quebec*, and *random*).
+Due to computational limitations, the search only ran for 10 trials and 40 epochs per dataset (*boston*, *brussels*, *mesa*, *quebec*, and *random*).
 A more thorough investigation over more epochs and more trials would likely result in a more optimal configuration than the one we found.
 
 The results of the hyperparameter search are shown in @tbl-hpo.
 
 | Dataset | Learning Rate | Momentum | Batch Size | Sequence Length |
-|:-------:|:--------------|:---------|:-----------|:----------------|
+|:-------|:--------------|:---------|:-----------|:----------------|
 | boston  | 0.0088        | 0.4863   | 33         | 100             |
 | brussels| 0.0837        | 0.5388   | 60         | 100             |
 | quebec  | 0.0646        | 0.6405   | 15         | 128             |
@@ -227,14 +225,13 @@ The results of the hyperparameter search are shown in @tbl-hpo.
 : The optimal hyperparameters based on the HPO {#tbl-hpo}
 
 
-Once the best hyperparameter configuration was identified, within each dataset, a model was trained on the training data and tested on the test data.
+Once the best hyperparameter configuration was identified, within each training dataset, a model was trained on the training data and tested on all test datasets.
 The maximum number of epochs for training was 500.
 Also, an early stopping mechanism had been implemented.
-The model would train until the validation loss did not increase anymore for ten epochs.
-Then the model parametrization from the epoch with the lowest validation loss would be used for testing on the test dataset.
+The model would train until the validation loss did not reach a new minimum anymore for ten epochs.
 
 Our evaluation criteria for the test set were the same as in the original study.
-We measures accuracy, precision, recall, and F1 score.
+We measured accuracy, precision, recall, and F1 score.
 The results of the study are presented in the next section.
 
 # Results
@@ -263,7 +260,7 @@ The results of our study are shown in @tbl-results.
 
 : Our study's results. Measures, where our performance exceeds the original study are printed in bold {#tbl-results}
 
-For comparison, the results of the original study are shown in @tbl-results_original. 
+As a reference, the results of the original study are shown in @tbl-results_original. 
 
 
 | Train   |   Test    | A    | P    | R    | F1   |
@@ -287,13 +284,13 @@ For comparison, the results of the original study are shown in @tbl-results_orig
 
 : The original study's results using a random forest classifier [@kwon_disentangling_2018] {#tbl-results_original}
 
-To evaluate whether the results support our hypotheses, we have to look at four different performance measures. @kwon_disentangling_2018 measured Accuracy, Precision, Recall, and F1 to evaluate the performance of their model. 
+To evaluate whether the results support our hypotheses, we had to look at four different performance measures. @kwon_disentangling_2018 measured Accuracy, Precision, Recall, and F1 to evaluate the performance of their model. 
 
 To simplify our hypotheses, we expected improvements in all four measures by using transformers and transfer learning. 
 
-As to _H1.A_, our expectation did not hold. Only Recall is improved compared to the original study, the other measures show lower values. 
+As to _H1.A_, our expectation did not hold. Only recall is improved compared to the original study, the other measures have lower values. 
 
-For _H1.B_, our expectation of a consistently improved generalization performance also did not hold. However, that is only due to a slightly worse precision when training on the boston data and testing on the brussels dataset. All other measures were improved compared to the original study. 
+For _H1.B_, our expectation of a consistently improved generalization performance also did not hold completely. However, that is only due to a slightly worse precision when training on the boston data and testing on the brussels dataset. All other measures were improved compared to the original study. 
 
 _H2.A_ again is not fully supported by the data. The precision is slightly worse when training and testing on the brussels data. 
 
@@ -310,31 +307,19 @@ Finally, _H4.A_ and _H4.B_ are consistently supported by the data. The performan
 
 Overall, the study had mixed results. We were successful in improving performance for several train and test dataset combinations and measures. However, there is still room for improvement. 
 
-There are several options one could try to further maximize the performance. Most importantly, we recommend conducting a more thorough hyperparameter search. We only tried 10 different random configurations. Given more computational resources, by trying for example 100 configurations instead, it would likely be possible to find even better hyperparameter settings which would lead to an improved performance. Another option would be to try different optimizers, as we only used PyTorch's SGD optimizer in our study. One could also attempt to conduct stopword removal, which we did not implement.
+There are several options one could try to further maximize the performance. Most importantly, we recommend conducting a more thorough hyperparameter search. We only tried 10 different random configurations (trials). Given more computational resources, by trying for example 100 configurations instead, it would likely be possible to find even better hyperparameter settings which would lead to an improved performance. Another option would be to try different optimizers, as we only used PyTorch's SGD optimizer in our study. One could also attempt to conduct stopword removal, which we did not implement.
 
-The reason we did not try these optimizations, was the limited computational resources available to us. This is also, in our opinion, the main disadvantage of training large models like the one used by us. Even though we only trained the classification head of our model, consisting of about 1500 parameters, training took considerable time. This is likely due to the millions of parameters of the BERTweet model, which results in the forward pass alone being rather complex and time as well as resource intensive. 
+The reason we did not try these optimizations, was the limited computational resources available to us. This is also, in our opinion, the main disadvantage of training large models like BERTweet. Even though we only trained the classification head of our model, consisting of about 1500 parameters, training took considerable time. This is likely due to the millions of parameters of the BERTweet model, which results in the forward pass alone being rather time and resource intensive. 
 
 However this issue mostly only affects the training of the model. Once trained, the finished model can be used rather efficiently to make predictions for unseen cases. 
 
-We provide our documented code in order to help other researchers aiming at further improving the performance of our model. 
+We provide our documented code in order to help future research aiming at further improving the performance of our model. 
 
-In summary, we believe to have shown the potential of using transformers with transfer learning when working with text data. 
+In summary, we believe to have shown the potential of using transformers with transfer learning when working with text data. We believe that, given enough time and resources, transformers can help classify users as either general public or institutional by using the potential of pretrained encoders resulting in useful and informative features. 
 
-We believe that, given enough time and resources, transformers can help classify users as either general public or institutional by using the potential of pretrained encoders resulting in useful and informative features. 
-
-Our training setup is rather simple and can be adapted by other researchers for training their own models. By that, we hope to contribute to the further improvements of automated classification of Twitter users and help future research relying on it.
+Our training setup is rather simple and can be adapted by future researchers for training their own models. By that, we hope to contribute to further improvements in the automated classification of Twitter users.
 
 
 # Sources
 
 All the data and code used to create this report can be found at TODO
-
-
-#TODO publish github repo
-#TODO: update yml
-#TODO: rename yml to env.yml
-
-#TODO: read over everything again and make it sound concise.
-
-#TODO: in the end check if figures are numbered correctly after rendering to pdf/html!!!
-
