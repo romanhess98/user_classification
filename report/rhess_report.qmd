@@ -339,3 +339,4 @@ All the data and code used to create this report can be found at TODO
 #TODO: read over everything again and make it sound concise.
 #TODO: spell check!
 #TODO: in the end check if figures are numbered correctly after rendering to pdf/html!!!
+#TODO: document logs

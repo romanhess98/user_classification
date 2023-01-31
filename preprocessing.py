@@ -1,48 +1,43 @@
 '''
-preprocessing
-authors provide no further details on this, however, dataset is messy
-Problems:
-1. duplicates
-3. duplicates with different labels
-4. some signs were replaced with encodings ("'" --> "‰Ûª")
+This file contains the preprocessing steps conducted to create the datasets in 'data/'.
 
+The datasets finally used in training.py were those named 'df_{event}_nd_c_train.csv', 
+'df_{event}_nd_c_val.csv', and 'df_{event}_nd_c_test.csv'.
 
 '''
 
 # import libraries
 import pandas as pd
-#import os
-
-#os.chdir('C:\\Users\\roman\\PycharmProjects\\semester_3\\TwitterUserClassifier-master\\user_classification_transformer')
 
 # import dataset
 df = pd.read_csv('data/df_raw.csv', encoding='latin-1')
 
-#print dataset size
-print(len(df))
+# print dataset size
+print('Dataset size: ', len(df))
 
 # problematic encodings
 print("\nSome rows have problematic values. It seems there was something wrong with the encodings there")
 print(df.loc[[155, 939, 1330, 166, 2155]])
 
-#rename columns
+# rename columns
 df.columns = ['description', 'is_gen_pub', 'source']
 
 #remove rows with nan values
 df.dropna(inplace=True)
 
-#print cases per source
+# print cases per source
 print("\nCases per source:")
 print(df['source'].value_counts())
 
-#print labels per source
+# print labels per source
 print("\nLabels per source:")
 print(df.groupby('source')['is_gen_pub'].value_counts())
 
-#turn is_gen_pub column into int type
+# turn is_gen_pub column into int type
 df['is_gen_pub'] = df['is_gen_pub'].astype(int)
 
-#replace all links (starting with "https") in the description columns with "http"
+# replace all links (starting with "https") in the description columns with "http"
+# NOTE: not needed, as BERTweet tokenizer handles links by itself
 #df['description'] = df['description'].str.replace(r'http\S+', 'http', regex=True)
 
 # obtain all rows where 'description' is a duplicate
@@ -71,23 +66,7 @@ print(f"\nThere are {len(uniques)} unique descriptions with contradicting labels
 for i in uniques:
     print("    ", i)
 
-
-
-"""
-with some of these bio texts, it is highly unlikely that they belong to different individuals. 
-The authors did not specify how they treated these cases. We will run our analyses on two different datasets:
-1. the original dataset
-2. the dataset with duplicates removed
-    --> we will remove duplicates by keeping the first occurence of a description and the majority label within each 
-    source dataset
-
-The dataset was manually labeled. To ensure inter rater reliability, some cases were labeled by multiple raters which 
-can lead to inconsistencies.
-
-Our assumption is that the majority label is the correct one.
-"""
-
-#randomly shuffle the dataset
+# randomly shuffle the dataset
 df = df.sample(frac=1, random_state=42).reset_index(drop=True)
 
 # store the whole dataset as a csv
@@ -98,12 +77,10 @@ df_train = df.iloc[:int(0.7*len(df))]
 df_val = df.iloc[int(0.7*len(df)):int(0.8*len(df))]
 df_test = df.iloc[int(0.8*len(df)):]
 
-#store the train, val and test set as csv
+# store the train, val and test set as csv
 df_train.to_csv('data/df_all_train.csv', index=False)
 df_val.to_csv('data/df_all_val.csv', index=False)
 df_test.to_csv('data/df_all_test.csv', index=False)
-
-
 
 # split up the dataset into 4 individual ones based on the source
 df_boston = df[df['source'] == 'Bostong Marathon Bombing']
@@ -111,7 +88,6 @@ df_brussels = df[df['source'] == 'Brussel Airport Bombing']
 df_mesa = df[df['source'] == 'Mesa Shooting']
 df_quebec = df[df['source'] == 'Quebec Mosque Shooting']
 df_random = df[df['source'] == 'Random Samples']
-
 
 # randomly shuffle each dataset
 df_boston = df_boston.sample(frac=1, random_state=42).reset_index(drop=True)
@@ -141,7 +117,6 @@ df_random_train = df_random.iloc[:int(0.7*len(df_random))]
 df_random_val = df_random.iloc[int(0.7*len(df_random)):int(0.8*len(df_random))]
 df_random_test = df_random.iloc[int(0.8*len(df_random)):]
 
-
 # store them as csv files
 df_boston.to_csv('data/df_boston.csv', index=False)
 df_brussels.to_csv('data/df_brussels.csv', index=False)
@@ -168,7 +143,6 @@ df_quebec_test.to_csv('data/df_quebec_test.csv', index=False)
 df_random_train.to_csv('data/df_random_train.csv', index=False)
 df_random_val.to_csv('data/df_random_val.csv', index=False)
 df_random_test.to_csv('data/df_random_test.csv', index=False)
-
 
 # find duplicate descriptions
 # for each duplicate
@@ -236,8 +210,6 @@ df_random_nd_c_train = df_random_nd_c.iloc[:int(0.7*len(df_random_nd_c))]
 df_random_nd_c_val = df_random_nd_c.iloc[int(0.7*len(df_random_nd_c)):int(0.8*len(df_random_nd_c))]
 df_random_nd_c_test = df_random_nd_c.iloc[int(0.8*len(df_random_nd_c)):]
 
-
-
 # store them as csv files
 df_boston_nd_c.to_csv('data/df_boston_nd_c.csv', index=False)
 df_brussels_nd_c.to_csv('data/df_brussels_nd_c.csv', index=False)
@@ -264,4 +236,3 @@ df_quebec_nd_c_test.to_csv('data/df_quebec_nd_c_test.csv', index=False)
 df_random_nd_c_train.to_csv('data/df_random_nd_c_train.csv', index=False)
 df_random_nd_c_val.to_csv('data/df_random_nd_c_val.csv', index=False)
 df_random_nd_c_test.to_csv('data/df_random_nd_c_test.csv', index=False)
-
