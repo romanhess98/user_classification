@@ -330,13 +330,11 @@ Our training setup is rather simple and can be adapted by other researchers for 
 All the data and code used to create this report can be found at TODO
 
 
-#TODO: make code beautiful for github
 #TODO publish github repo
-#TODO: include comments
 #TODO: update yml
 #TODO: rename yml to env.yml
 
 #TODO: read over everything again and make it sound concise.
 #TODO: spell check!
 #TODO: in the end check if figures are numbered correctly after rendering to pdf/html!!!
-#TODO: document logs
+
