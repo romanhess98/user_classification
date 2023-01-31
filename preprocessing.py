@@ -151,6 +151,14 @@ df_random_test.to_csv('data/df_random_test.csv', index=False)
 # add a case to the dataset containing the description and the majority label
 
 def replace_duplicates_with_majority_case(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Finds duplicates in a dataset and replaces duplicates with conflicting labels with
+    a single case of itself with the majority label.
+
+    :param dataframe: the dataframe to clean
+    :return: the cleaned dataframe
+    
+    """
 
     # find duplicates in df_boston
     tmp = dataframe[dataframe.duplicated(['description'], keep=False)].copy()
@@ -162,11 +170,12 @@ def replace_duplicates_with_majority_case(dataframe: pd.DataFrame) -> pd.DataFra
     print(dataframe.shape)
     dataframe.drop_duplicates(subset=['description'], keep=False, inplace=True, ignore_index=True)
     print(dataframe.shape)
-    
+
     # for each duplicate
     # count the number of label=0 and label=1
     prc = tmp.groupby(by=['description'], as_index=False).mean(numeric_only=True)
 
+    # clean the dataset
     n_inconsistent=0
     for idx, rw in prc.iterrows():
         if rw['is_gen_pub'] != 0 and rw['is_gen_pub'] != 1:
