@@ -49,10 +49,10 @@ To run the hyperparameter optimization and/or training and testing yourself, fol
 ## Environment
 This project was created on Ubuntu 22.04.1.
 
-To create the conda environment used for this project on your local machine, navigate to `/environment` in your terminal
+To create the conda environment used for this project on your local machine, navigate to `/environment` in your terminal 
 and call 
 
-`conda env create -f last_working_env.yml`
+`conda env create -f env.yml`
 
 To activate it, call:
 
