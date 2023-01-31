@@ -26,7 +26,7 @@ Institutional accounts differ from general public accounts in that they might re
 Communication on Twitter can be social or non-social and spontaneous or strategic.
 When researchers are mainly interested in natural communication between individuals, they might want to filter out the institutional users first [@kwon_disentangling_2018].
 This filtering can also be helpful for recommendation engines, products opinion mining tools etc. [@daouadi_organization_2018].
-As institutional accounts make up 9% of Twitter accounts [@mccorriston_organizations_2015] they can skew the tweet sample significantly.
+As institutional accounts make up 9% of Twitter accounts [@mccorriston_organizations_2015] they can skew the Tweet sample significantly.
 
 Defining who is a general public and who is an institutional user is not trivial and different approaches exist in the literature.
 @li_hybrid_2018 aimed at differentiating between male, female and *brand-related* Twitter users.
@@ -34,7 +34,7 @@ Defining who is a general public and who is an institutional user is not trivial
 Closed accounts on the other hand publish information about their daily lives and use Twitter to communicate with their friends.
 @mccorriston_organizations_2015  created a tool to distinguish between organizational and individual accounts but did not define their definition of *organizational* in detail.
 Lastly, @de_choudhury_unfolding_2012 split Twitter users into ordinary individuals, organizations, and journalists/media bloggers.
-The existing diversity and intransparency in defining user categories is not ideal.
+The existing diversity and opacity in defining user categories is not ideal.
 There is potential for a unified system of deciding which users belong to which group to make it easier for researchers to filter out institutional users and make research more comparable.
 
 Some differences between institutional and general public users have been highlighted by @kwon_disentangling_2018.
@@ -48,7 +48,7 @@ Several techniques for this purpose have already been introduced. They will be p
 
 ## Existing Classifiers
 
-@li_hybrid_2018 introduced TWIROLE, which uses Twitter users' name, description, the Follower-Friend Ratio, profile image and tweets as features for a hybrid classifier.
+@li_hybrid_2018 introduced TWIROLE, which uses Twitter users' name, description, the Follower-Friend Ratio, profile image and Tweets as features for a hybrid classifier.
 The text features are rather simple and frequency based in this case.
 
 @mccorriston_organizations_2015 used post content, stylistic as well as structural and behavioral features for their classifier.
@@ -61,7 +61,7 @@ Their features were solely statistical-based and included measures like the numb
 @kwon_disentangling_2018 trained a classifier solely based on twitter profile descriptions.
 They used the sci-kit learn package in python and their representations of each profile text only considered the 500 most frequent terms in the data.
 Thus the representation of each profile text was a 500 dimensional sparse vector containing the raw frequencies for the top 500 most frequent words.
-A random forrest classifier was then used to separate general public profiles from institutional accounts.
+A random forest classifier was then used to separate general public profiles from institutional accounts.
 
 None of the approaches we could find used dense (pretrained) text embeddings or transformers.
 However, using such techniques yields high potential when working with natural language, as can be found in Twitter data.
@@ -81,7 +81,7 @@ This can improve the prediction performance on different NLP tasks [@wankmuller_
 We believe that this also holds for the task of Twitter user classification into general public and institutional users.
 When text data is available, it is reasonable to expect that the usage of pretrained word embeddings and encoders can leverage performance.
 Using a pretrained BERT model is especially promising in our case, because of the availability of BERTweet, which is based on the RoBERTa pre-training procedure.
-It has been trained on 850 million english tweets and consists of 135 million parameters [@nguyen_bertweet_2020].
+It has been trained on 850 million English Tweets and consists of 135 million parameters [@nguyen_bertweet_2020].
 
 The goal of this work is to show the advantages of transformer models over conventional machine learning techniques in user classification.
 In order to do that we tried to locate the datasets used by previous classification models and surpass the original authors' performance by using BERTweet for generating text features.
@@ -154,7 +154,7 @@ In the original paper, @kwon_disentangling_2018 used an 80/20 split to create a 
 As using BERTweet requires defining some hyperparameters, we decided to create a validation set as well.
 Thus, we used a split of 70/10/20 for the training, validation, and test set.
 Before splitting the data, we randomly shuffled it, to avoid different label distributions between the sets.
-It would have been advantageous if the train-test split from the original paper had been known to outrule any other reasons for the expected difference in performance when using BERTweet.
+It would have been advantageous if the train-test split from the original paper had been known to rule out any other reasons for the expected difference in performance when using BERTweet.
 However, as the original study's authors used the scikit learn library for training []@kwon_disentangling_2018], it is likely that they shuffled the data as well before training.
 Overall, as the shuffling is random, it should not make a real difference.
 
@@ -191,12 +191,12 @@ This representation was dense (meaning it consisted of float numbers) and 768-di
 
 These features were then fed into a simple linear classifier with two output neurons and a bias.
 The classifier thus consisted of 1537 parameters.
-The outputs were fed as logit values into Pytorch's cross entropy loss function.
+The outputs were fed as logit values into PyTorch's cross entropy loss function.
 From there the loss was backpropagated only through the classifier.
 The parameters of BERTweet remained unchanged throughout the training process.
 
 ## Training
-For training, the Pytorch Lightning library was used together with huggingface's nlp and transformers libraries.
+For training, the PyTorch Lightning library was used together with huggingface's nlp and transformers libraries.
 The creation of our study's results consisted of two parts.
 First the model was trained on the training set.
 During this, a hyperparameter search was used to find the ideal hyperparameter configuration.
@@ -285,7 +285,7 @@ For comparison, the results of the original study are shown in @tbl-results_orig
 |         |  boston   | .586 | .636 | .764 | .694 |
 |         |  quebec   | .677 | .897 | .725 | .802 |
 
-: The original study's results using a random forrest classifier [@kwon_disentangling_2018] {#tbl-results_original}
+: The original study's results using a random forest classifier [@kwon_disentangling_2018] {#tbl-results_original}
 
 To evaluate whether the results support our hypotheses, we have to look at four different performance measures. @kwon_disentangling_2018 measured Accuracy, Precision, Recall, and F1 to evaluate the performance of their model. 
 
@@ -335,6 +335,6 @@ All the data and code used to create this report can be found at TODO
 #TODO: rename yml to env.yml
 
 #TODO: read over everything again and make it sound concise.
-#TODO: spell check!
+
 #TODO: in the end check if figures are numbered correctly after rendering to pdf/html!!!
 
