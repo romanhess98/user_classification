@@ -283,8 +283,8 @@ div.csl-indent {
 </tbody>
 </table>
 </div>
-<p>Once the best hyperparameter configuration was identified, within each dataset, a model was trained on the training data and tested on the test data. The maximum number of epochs for training was 500. Also, an early stopping mechanism had been implemented. The model would train until the validation loss did not increase anymore for ten epochs. Then the model parametrization from the epoch with the lowest validation loss would be used for testing on the test dataset.</p>
-<p>Our evaluation criteria for the test set were the same as in the original study. We measures accuracy, precision, recall, and F1 score. The results of the study are presented in the next section.</p>
+<p>Once the best hyperparameter configuration was identified, within each training dataset, a model was trained on the training data and tested on all test datasets. The maximum number of epochs for training was 500. Also, an early stopping mechanism had been implemented. The model would train until the validation loss did not reach a new minimum anymore for ten epochs.</p>
+<p>Our evaluation criteria for the test set were the same as in the original study. We measured accuracy, precision, recall, and F1 score. The results of the study are presented in the next section.</p>
 </section>
 </section>
 <section id="results" class="level1">
@@ -435,7 +435,7 @@ div.csl-indent {
 </tbody>
 </table>
 </div>
-<p>For comparison, the results of the original study are shown in <a href="#tbl-results_original">Table&nbsp;5</a>.</p>
+<p>As a reference, the results of the original study are shown in <a href="#tbl-results_original">Table&nbsp;5</a>.</p>
 <div id="tbl-results_original" class="anchored">
 <table class="table">
 <caption>Table&nbsp;5: The original study’s results using a random forest classifier <span class="citation" data-cites="kwon_disentangling_2018">(<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">Kwon, Priniski, and Chadha 2018</a>)</span></caption>
@@ -581,10 +581,10 @@ div.csl-indent {
 </tbody>
 </table>
 </div>
-<p>To evaluate whether the results support our hypotheses, we have to look at four different performance measures. <span class="citation" data-cites="kwon_disentangling_2018">Kwon, Priniski, and Chadha (<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">2018</a>)</span> measured Accuracy, Precision, Recall, and F1 to evaluate the performance of their model.</p>
+<p>To evaluate whether the results support our hypotheses, we had to look at four different performance measures. <span class="citation" data-cites="kwon_disentangling_2018">Kwon, Priniski, and Chadha (<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">2018</a>)</span> measured Accuracy, Precision, Recall, and F1 to evaluate the performance of their model.</p>
 <p>To simplify our hypotheses, we expected improvements in all four measures by using transformers and transfer learning.</p>
-<p>As to <em>H1.A</em>, our expectation did not hold. Only Recall is improved compared to the original study, the other measures show lower values.</p>
-<p>For <em>H1.B</em>, our expectation of a consistently improved generalization performance also did not hold. However, that is only due to a slightly worse precision when training on the boston data and testing on the brussels dataset. All other measures were improved compared to the original study.</p>
+<p>As to <em>H1.A</em>, our expectation did not hold. Only recall is improved compared to the original study, the other measures have lower values.</p>
+<p>For <em>H1.B</em>, our expectation of a consistently improved generalization performance also did not hold completely. However, that is only due to a slightly worse precision when training on the boston data and testing on the brussels dataset. All other measures were improved compared to the original study.</p>
 <p><em>H2.A</em> again is not fully supported by the data. The precision is slightly worse when training and testing on the brussels data.</p>
 <p>However, the findings support <em>H2.B</em>, as the generalization performance is consistently increased, across all measures and all other datasets.</p>
 <p>The findings also support <em>H3.A</em>, as the performance is consistently improved when training and testing on the quebec data.</p>
@@ -594,20 +594,16 @@ div.csl-indent {
 <section id="discussion" class="level1">
 <h1>Discussion</h1>
 <p>Overall, the study had mixed results. We were successful in improving performance for several train and test dataset combinations and measures. However, there is still room for improvement.</p>
-<p>There are several options one could try to further maximize the performance. Most importantly, we recommend conducting a more thorough hyperparameter search. We only tried 10 different random configurations. Given more computational resources, by trying for example 100 configurations instead, it would likely be possible to find even better hyperparameter settings which would lead to an improved performance. Another option would be to try different optimizers, as we only used PyTorch’s SGD optimizer in our study. One could also attempt to conduct stopword removal, which we did not implement.</p>
-<p>The reason we did not try these optimizations, was the limited computational resources available to us. This is also, in our opinion, the main disadvantage of training large models like the one used by us. Even though we only trained the classification head of our model, consisting of about 1500 parameters, training took considerable time. This is likely due to the millions of parameters of the BERTweet model, which results in the forward pass alone being rather complex and time as well as resource intensive.</p>
+<p>There are several options one could try to further maximize the performance. Most importantly, we recommend conducting a more thorough hyperparameter search. We only tried 10 different random configurations (trials). Given more computational resources, by trying for example 100 configurations instead, it would likely be possible to find even better hyperparameter settings which would lead to an improved performance. Another option would be to try different optimizers, as we only used PyTorch’s SGD optimizer in our study. One could also attempt to conduct stopword removal, which we did not implement.</p>
+<p>The reason we did not try these optimizations, was the limited computational resources available to us. This is also, in our opinion, the main disadvantage of training large models like BERTweet. Even though we only trained the classification head of our model, consisting of about 1500 parameters, training took considerable time. This is likely due to the millions of parameters of the BERTweet model, which results in the forward pass alone being rather time and resource intensive.</p>
 <p>However this issue mostly only affects the training of the model. Once trained, the finished model can be used rather efficiently to make predictions for unseen cases.</p>
-<p>We provide our documented code in order to help other researchers aiming at further improving the performance of our model.</p>
-<p>In summary, we believe to have shown the potential of using transformers with transfer learning when working with text data.</p>
-<p>We believe that, given enough time and resources, transformers can help classify users as either general public or institutional by using the potential of pretrained encoders resulting in useful and informative features.</p>
-<p>Our training setup is rather simple and can be adapted by other researchers for training their own models. By that, we hope to contribute to the further improvements of automated classification of Twitter users and help future research relying on it.</p>
+<p>We provide our documented code in order to help future research aiming at further improving the performance of our model.</p>
+<p>In summary, we believe to have shown the potential of using transformers with transfer learning when working with text data. We believe that, given enough time and resources, transformers can help classify users as either general public or institutional by using the potential of pretrained encoders resulting in useful and informative features.</p>
+<p>Our training setup is rather simple and can be adapted by future researchers for training their own models. By that, we hope to contribute to further improvements in the automated classification of Twitter users.</p>
 </section>
 <section id="sources" class="level1">
 <h1>Sources</h1>
-<p>All the data and code used to create this report can be found at TODO</p>
-<p>#TODO publish github repo</p>
-<p>#TODO: read over everything again and make it sound concise.</p>
-<p>#TODO: in the end check if figures are numbered correctly after rendering to pdf/html!!!</p>
+<p>All the data and code used to create this report can be found <a href="https://github.com/romanhess98/user_classification">here</a>.</p>
 
 </section>
 
