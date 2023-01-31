@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.313">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Roman Heß">
+<meta name="dcterms.date" content="2023-01-31">
+
+<title>Improving the Classification of General Public and Institutional Twitter Users with Transformers.</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+
+<script src="rhess_report_files/libs/clipboard/clipboard.min.js"></script>
+<script src="rhess_report_files/libs/quarto-html/quarto.js"></script>
+<script src="rhess_report_files/libs/quarto-html/popper.min.js"></script>
+<script src="rhess_report_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="rhess_report_files/libs/quarto-html/anchor.min.js"></script>
+<link href="rhess_report_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="rhess_report_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="rhess_report_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="rhess_report_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="rhess_report_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Improving the Classification of General Public and Institutional Twitter Users with Transformers.</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Roman Heß </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 31, 2023</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Twitter is an interesting data source for computational communication scientists. The Twitter API makes it comparably easy to obtain large amounts of text data. This enables Big Data analyses for various purposes, but comes with its own challenges. For example, Twitter users might not be representative of the general offline population. Also, some twitter accounts might be fictious <span class="citation" data-cites="ahmed_using_2017">(<a href="#ref-ahmed_using_2017" role="doc-biblioref">Ahmed, Bath, and Demartini 2017</a>)</span>. Especially the detection of bots has triggered a lot of research <span class="citation" data-cites="kudugunta_deep_2018">(e.g. <a href="#ref-kudugunta_deep_2018" role="doc-biblioref">Kudugunta and Ferrara 2018</a>)</span>. When researchers analyze Twitter data, they may want to exclude these cases from their datasets. Or they might also want to isolate users from a certain country <span class="citation" data-cites="kwon_disentangling_2018">(<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">Kwon, Priniski, and Chadha 2018</a>)</span> or gender <span class="citation" data-cites="vashisth_gender_2020">(<a href="#ref-vashisth_gender_2020" role="doc-biblioref">Vashisth and Meehan 2020</a>)</span>, depending on the research questions.</p>
+<p>Another differentiation between Twitter users, which can potentially impact the findings of a given research question is the separation of general public and institutional users. Institutional accounts differ from general public accounts in that they might represent a (governmental) institution, the media, or some other kind of organization. Communication on Twitter can be social or non-social and spontaneous or strategic. When researchers are mainly interested in natural communication between individuals, they might want to filter out the institutional users first <span class="citation" data-cites="kwon_disentangling_2018">(<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">Kwon, Priniski, and Chadha 2018</a>)</span>. This filtering can also be helpful for recommendation engines, products opinion mining tools etc. <span class="citation" data-cites="daouadi_organization_2018">(<a href="#ref-daouadi_organization_2018" role="doc-biblioref">Daouadi, Rebaï, and Amous 2018</a>)</span>. As institutional accounts make up 9% of Twitter accounts <span class="citation" data-cites="mccorriston_organizations_2015">(<a href="#ref-mccorriston_organizations_2015" role="doc-biblioref">McCorriston, Jurgens, and Ruths 2015</a>)</span> they can skew the tweet sample significantly.</p>
+<p>Defining who is a general public and who is an institutional user is not trivial and different approaches exist in the literature. <span class="citation" data-cites="li_hybrid_2018">Li et al. (<a href="#ref-li_hybrid_2018" role="doc-biblioref">2018</a>)</span> aimed at differentiating between male, female and <em>brand-related</em> Twitter users. <span class="citation" data-cites="yan_classifying_2013">Yan, Ma, and Yoshikawa (<a href="#ref-yan_classifying_2013" role="doc-biblioref">2013</a>)</span> differentiate between <em>open</em> and <em>closed</em> accounts, where open accounts publish information to the public, with their goal being to promote products, services or themselves. Closed accounts on the other hand publish information about their daily lives and use Twitter to communicate with their friends. <span class="citation" data-cites="mccorriston_organizations_2015">McCorriston, Jurgens, and Ruths (<a href="#ref-mccorriston_organizations_2015" role="doc-biblioref">2015</a>)</span> created a tool to distinguish between organizational and individual accounts but did not define their definition of <em>organizational</em> in detail. Lastly, <span class="citation" data-cites="de_choudhury_unfolding_2012">De Choudhury, Diakopoulos, and Naaman (<a href="#ref-de_choudhury_unfolding_2012" role="doc-biblioref">2012</a>)</span> split Twitter users into ordinary individuals, organizations, and journalists/media bloggers. The existing diversity and intransparency in defining user categories is not ideal. There is potential for a unified system of deciding which users belong to which group to make it easier for researchers to filter out institutional users and make research more comparable.</p>
+<p>Some differences between institutional and general public users have been highlighted by <span class="citation" data-cites="kwon_disentangling_2018">Kwon, Priniski, and Chadha (<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">2018</a>)</span>. In their study, general public users showed more retweeting than institutional users, less analytic language use and more affective language use.</p>
+<p>Overall, for the above mentioned reasons, there is a need for reliable classification models, allowing researchers to filter out institutional accounts when their target sample should only contain general public users. Several techniques for this purpose have already been introduced. They will be presented in the next section.</p>
+</section>
+<section id="literature-review" class="level1">
+<h1>Literature Review</h1>
+<section id="existing-classifiers" class="level2">
+<h2 class="anchored" data-anchor-id="existing-classifiers">Existing Classifiers</h2>
+<p><span class="citation" data-cites="li_hybrid_2018">Li et al. (<a href="#ref-li_hybrid_2018" role="doc-biblioref">2018</a>)</span> introduced TWIROLE, which uses Twitter users’ name, description, the Follower-Friend Ratio, profile image and tweets as features for a hybrid classifier. The text features are rather simple and frequency based in this case.</p>
+<p><span class="citation" data-cites="mccorriston_organizations_2015">McCorriston, Jurgens, and Ruths (<a href="#ref-mccorriston_organizations_2015" role="doc-biblioref">2015</a>)</span> used post content, stylistic as well as structural and behavioral features for their classifier. The text features they implemented were mostly frequency-based, the other features were numerical. All features were then fed into a support vector machine for classification</p>
+<p><span class="citation" data-cites="daouadi_organization_2018">Daouadi, Rebaï, and Amous (<a href="#ref-daouadi_organization_2018" role="doc-biblioref">2018</a>)</span> did not use textual features at all. Their features were solely statistical-based and included measures like the number of followers, liked tweets, posts per day etc.</p>
+<p><span class="citation" data-cites="kwon_disentangling_2018">Kwon, Priniski, and Chadha (<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">2018</a>)</span> trained a classifier solely based on twitter profile descriptions. They used the sci-kit learn package in python and their representations of each profile text only considered the 500 most frequent terms in the data. Thus the representation of each profile text was a 500 dimensional sparse vector containing the raw frequencies for the top 500 most frequent words. A random forrest classifier was then used to separate general public profiles from institutional accounts.</p>
+<p>None of the approaches we could find used dense (pretrained) text embeddings or transformers. However, using such techniques yields high potential when working with natural language, as can be found in Twitter data.</p>
+<p><span class="citation" data-cites="wankmuller_introduction_2022">Wankmüller (<a href="#ref-wankmuller_introduction_2022" role="doc-biblioref">2022</a>)</span> illustrated this potential of Neural Transfer Learning using transformers for text analysis in the social sciences. Transfer learning refers to a setting where something that has been learned in one situation is exploited in another situation <span class="citation" data-cites="goodfellow_deep_2016">(<a href="#ref-goodfellow_deep_2016" role="doc-biblioref">Goodfellow, Bengio, and Courville 2016</a>)</span>. For Transformer models such as BERT or RoBERTa, pretrained weights and token embeddings are freely available online. These models have been trained with enormous amounts of data on well-designed pretraining tasks. Researchers can use these pretrained encoders to obtain dense representations of their text data. These features usually contain far more information than conventional, more simple text representations, as they use the knowledge inherent in the huge text corpora used for pretraining the transformer models. They can then be fed into a smaller model which is then trained on the actual task the researcher is interested in.</p>
+<p>This can improve the prediction performance on different NLP tasks <span class="citation" data-cites="wankmuller_introduction_2022">(<a href="#ref-wankmuller_introduction_2022" role="doc-biblioref">Wankmüller 2022</a>)</span>.</p>
+</section>
+<section id="study-goal" class="level2">
+<h2 class="anchored" data-anchor-id="study-goal">Study Goal</h2>
+<p>We believe that this also holds for the task of Twitter user classification into general public and institutional users. When text data is available, it is reasonable to expect that the usage of pretrained word embeddings and encoders can leverage performance. Using a pretrained BERT model is especially promising in our case, because of the availability of BERTweet, which is based on the RoBERTa pre-training procedure. It has been trained on 850 million english tweets and consists of 135 million parameters <span class="citation" data-cites="nguyen_bertweet_2020">(<a href="#ref-nguyen_bertweet_2020" role="doc-biblioref">Nguyen, Vu, and Nguyen 2020</a>)</span>.</p>
+<p>The goal of this work is to show the advantages of transformer models over conventional machine learning techniques in user classification. In order to do that we tried to locate the datasets used by previous classification models and surpass the original authors’ performance by using BERTweet for generating text features. The only dataset we could find was that used by <span class="citation" data-cites="kwon_disentangling_2018">Kwon, Priniski, and Chadha (<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">2018</a>)</span>, who used Twitter profile descriptions as the sole input for their classifier. To be precise, the authors used five different datasets which were collected in the context of different events (<em>boston</em>, <em>brussels</em>, <em>mesa</em>, <em>quebec</em>, <em>random</em>). They trained one model per dataset and then evaluated the performances within the same dataset as well as the classifiers’ generalization across the other datasets.</p>
+</section>
+<section id="hypotheses" class="level2">
+<h2 class="anchored" data-anchor-id="hypotheses">Hypotheses</h2>
+<p>As the profile descriptions are the only input used, we expect BERTweet to enable a better performance than in the original study. Thus, we define our hypotheses as follows:</p>
+<p>By designing our own classifier, using the BERTweet encoder to generate dense and meaningful representations of Twitter profile descriptions, we expect to achieve:</p>
+<p><em>H1.A</em>: a better performance on the <em>boston</em> test set, when trained on the <em>boston</em> training set than in the original study.</p>
+<p><em>H1.B</em>: a better performance on all other test sets, when trained on the <em>boston</em> training set than in the original study.</p>
+<p><em>H2.A</em>: a better performance on the <em>brussels</em> test set, when trained on the <em>brussels</em> training set than in the original study.</p>
+<p><em>H2.B</em>: a better performance on all other test sets, when trained on the <em>brussels</em> training set than in the original study.</p>
+<p><em>H3.A</em>: a better performance on the <em>quebec</em> test set, when trained on the <em>quebec</em> training set than in the original study.</p>
+<p><em>H3.B</em>: a better performance on all other test sets, when trained on the <em>quebec</em> training set than in the original study.</p>
+<p><em>H4.A</em>: a better performance on the <em>random</em> test set, when trained on the <em>random</em> training set than in the original study.</p>
+<p><em>H4.B</em>: a better performance on all other test sets, when trained on the <em>random</em> training set than in the original study.</p>
+</section>
+</section>
+<section id="method" class="level1">
+<h1>Method</h1>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>The dataset used by <span class="citation" data-cites="kwon_disentangling_2018">Kwon, Priniski, and Chadha (<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">2018</a>)</span> consisted of three variables. The first column contained the Twitter profile descriptions as strings. The second column <em>is_gen_pub</em> listed the labels (institutional=0, general public=1). The third column contained the <em>source</em> and thus allowed to split the dataset into the five smaller datasets <em>boston</em>, <em>brussels</em>, <em>mesa</em>, <em>quebec</em>, and <em>random</em>.</p>
+<p>Overall the dataset consisted of 8945 cases. Out of those, 2000 belonged to the <em>boston</em> dataset, 2008 to <em>brussels</em>, 918 to <em>mesa</em>, 1998 to <em>quebec</em> and 2021 to <em>random</em>. Unfortunately, we spotted an error in the mesa data. All annotations carried the label 1, and there were no negative cases. Thus, we decided, to remove the mesa data from our analysis. This sparked doubt about the reliability of the other datasets as well. However, for the other sources, the distribution of positive and negative cases matched the description of the authors making them seem reliable enough for us to analyze.</p>
+</section>
+<section id="preprocessing" class="level2">
+<h2 class="anchored" data-anchor-id="preprocessing">Preprocessing</h2>
+<p>In a first step, we cleaned the dataset. The labels were created through manual annotation by different raters. Because of that, the dataset contained some duplicate cases, where the same profile description had received different labels. As inconsistent labels can hurt machine learning, we decided to handle these cases as follows. First we split the dataset into the five smaller datasets based on the <em>source</em> column. Then, under the assumption that the majority label is the correct one, we replaced multiple occurrences of the same profile description with a single row containing the description and the majority class as label. An equal amount of positive and negative ratings resulted in the assignment of the positive class (1). The dataset sizes before and after cleaning are shown in Table X.</p>
+<table class="table">
+<caption>Dataset sizes before and after cleaning</caption>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Dataset</th>
+<th style="text-align: left;">Before</th>
+<th style="text-align: left;">After</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">boston</td>
+<td style="text-align: left;">2000</td>
+<td style="text-align: left;">1675</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">brussels</td>
+<td style="text-align: left;">1997</td>
+<td style="text-align: left;">1997</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">quebec</td>
+<td style="text-align: left;">1998</td>
+<td style="text-align: left;">1751</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">random</td>
+<td style="text-align: left;">2021</td>
+<td style="text-align: left;">2003</td>
+</tr>
+</tbody>
+</table>
+<p>In a last step each of the five datasets was split into a training, validation, and test set. In the original paper, <span class="citation" data-cites="kwon_disentangling_2018">Kwon, Priniski, and Chadha (<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">2018</a>)</span> used an 80/20 split to create a training and test set. As using BERTweet requires defining some hyperparameters, we decided to create a validation set as well. Thus, we used a split of 70/10/20 for the training, validation, and test set. Before splitting the data, we randomly shuffled it, to avoid different label distributions between the sets. It would have been advantageous if the train-test split from the original paper had been known to outrule any other reasons for the expected difference in performance when using BERTweet. However, as the original study’s authors used the scikit learn library for training <span class="citation" data-cites="kwon_disentangling_2018">(<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">Kwon, Priniski, and Chadha 2018</a>)</span>, it is likely that they shuffled the data as well before training. Overall, as the shuffling is random, it should not make a real difference.</p>
+<p>##Tokenization BERTweet offers its own tokenizer <span class="citation" data-cites="nguyen_bertweet_2020">(<a href="#ref-nguyen_bertweet_2020" role="doc-biblioref">Nguyen, Vu, and Nguyen 2020</a>)</span>. It is recommended to use it as this is the tokenizer that was used during pretraining. For example, the tokenizer would transform the input:</p>
+<p>‘Feminist. Proud liberal. Pro-love. Colin Morgan fan. Book lover. History geek. Cat person. Chocolate eater. Apparently a snowflake. #TheResistance #ImpeachTrump’</p>
+<p>into the following tokens:</p>
+<p>‘Femin@@’, ‘ist@@’, ‘.’, ‘Proud’, ‘liber@@’, ‘al.’, ‘Pro-@@’, ‘love@@’, ‘.’, ‘Colin’, ‘Morgan’, ‘fan@@’, ‘.’, ‘Book’, ‘lo@@’, ‘ver@@’, ‘.’, ‘History’, ‘gee@@’, ‘k@@’, ‘.’, ‘Cat’, ‘person@@’, ‘.’, ‘Chocolate’, ‘ea@@’, ‘ter@@’, ‘.’, ‘Apparently’, ‘a’, ‘snow@@’, ‘fla@@’, ‘ke@@’, ‘.’, ‘#TheResistance’, ‘#ImpeachTrump’.</p>
+<p>Tokens in this case are not always whole words but smaller parts of words. A syllable following another inside the same word is indicated by an <em><span class="citation" data-cites="*-symbol">(<a href="#ref-*-symbol" role="doc-biblioref"><strong>*-symbol?</strong></a>)</span>. Inputs not understood by the tokenizer receive a special </em>unknown*-token. When using BERTweet, one has to decide on a maximum input length to feed to the model. The largest length (meaning the number of tokens) the model can take is 128. The distribution of the number of tokens per profile description in all five datasets is shown in Figure 1.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figs/token_lengths.png" class="img-fluid figure-img"></p>
+<p></p><figcaption class="figure-caption"><strong>Figure 1</strong>: Distribution over token lengths in the full dataset</figcaption><p></p>
+</figure>
+</div>
+<p>Using hyperparameter optimization we tried three different configurations of 90, 100 and 128 as the maximum sequence length. Any profile description longer than this would be cut at the maximum length and every description shorter than this would be filled up to this maximum length using a special padding token.</p>
+</section>
+<section id="model" class="level2">
+<h2 class="anchored" data-anchor-id="model">Model</h2>
+<p>As described above, the BERTweet pretrained transformer model was used to obtain a meaningful representation of the profile descriptions. This representation was dense (meaning it consisted of float numbers) and 768-dimensional.</p>
+<p>These features were then fed into a simple linear classifier with two output neurons and a bias. The classifier thus consisted of 1537 parameters. The outputs were fed as logit values into Pytorch’s cross entropy loss function. From there the loss was backpropagated only through the classifier. The parameters of BERTweet remained unchanged throughout the training process.</p>
+</section>
+<section id="training" class="level2">
+<h2 class="anchored" data-anchor-id="training">Training</h2>
+<p>For training, the Pytorch Lightning library was used together with huggingface’s nlp and transformers libraries. The creation of our study’s results consisted of two parts. First the model was trained on the training set. During this, a hyperparameter search was used to find the ideal hyperparameter configuration. The hyperparameters used and the corresponding search spaces are shown in Table X (TODO).</p>
+<table class="table">
+<caption>The parameters and their corresponding search spaces used in the HPO</caption>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Parameter</th>
+<th style="text-align: left;">Search Space</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Learning Rate</td>
+<td style="text-align: left;">[1e-5 ; 1e-1]</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Momentum</td>
+<td style="text-align: left;">[0.01; 0.99]</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Batch Size</td>
+<td style="text-align: left;">[4 ; 64]</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Sequence Length</td>
+<td style="text-align: left;">[90 , 100 , 128]</td>
+</tr>
+</tbody>
+</table>
+<p>For hyperparameter optimization, the <em>HyperbandPruner</em> from the optuna library was used, taking the validation loss as the evaluation criterion. Due to computational limitations, the search went on for 10 trials and 40 epochs per dataset (<em>boston</em>, <em>brussels</em>, <em>mesa</em>, <em>quebec</em>, and <em>random</em>). A more thorough investigation over more epochs and more trials would likely result in a more optimal configuration than the one we found.</p>
+<p>The results of the hyperparameter search are shown in Table X.</p>
+<table class="table">
+<caption>The optimal hyperparameters based on the HPO</caption>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Dataset</th>
+<th style="text-align: left;">Learning Rate</th>
+<th style="text-align: left;">Momentum</th>
+<th style="text-align: left;">Batch Size</th>
+<th style="text-align: left;">Sequence Length</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">boston</td>
+<td style="text-align: left;">0.0088</td>
+<td style="text-align: left;">0.4863</td>
+<td style="text-align: left;">33</td>
+<td style="text-align: left;">100</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">brussels</td>
+<td style="text-align: left;">0.0837</td>
+<td style="text-align: left;">0.5388</td>
+<td style="text-align: left;">60</td>
+<td style="text-align: left;">100</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">quebec</td>
+<td style="text-align: left;">0.0646</td>
+<td style="text-align: left;">0.6405</td>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">128</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">random</td>
+<td style="text-align: left;">0.0429</td>
+<td style="text-align: left;">0.7009</td>
+<td style="text-align: left;">21</td>
+<td style="text-align: left;">100</td>
+</tr>
+</tbody>
+</table>
+<p>Once the best hyperparameter configuration was identified, within each dataset, a model was trained on the training data and tested on the test data. The maximum number of epochs for training was 500. Also, an early stopping mechanism had been implemented. The model would train until the validation loss did not increase anymore for ten epochs. Then the model parametrization from the epoch with the lowest validation loss would be used for testing on the test dataset.</p>
+<p>Our evaluation criteria for the test set were the same as in the original study. We measures accuracy, precision, recall, and F1 score. The results of the study are presented in the next section.</p>
+</section>
+</section>
+<section id="results" class="level1">
+<h1>Results</h1>
+<p>The results of our study are shown Table X.</p>
+<table class="table">
+<caption><strong>Table X</strong>: Our study’s results. Measures, where our performance exceeds the original study are printed in bold.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Train</th>
+<th style="text-align: left;">Test</th>
+<th style="text-align: center;">A</th>
+<th style="text-align: center;">P</th>
+<th style="text-align: center;">R</th>
+<th style="text-align: center;">F1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">boston</td>
+<td style="text-align: left;">boston</td>
+<td style="text-align: center;">.803</td>
+<td style="text-align: center;">.777</td>
+<td style="text-align: center;"><strong>.951</strong></td>
+<td style="text-align: center;">.855</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">brussels</td>
+<td style="text-align: center;"><strong>.817</strong></td>
+<td style="text-align: center;">.837</td>
+<td style="text-align: center;"><strong>.924</strong></td>
+<td style="text-align: center;"><strong>.878</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">quebec</td>
+<td style="text-align: center;"><strong>.923</strong></td>
+<td style="text-align: center;"><strong>.951</strong></td>
+<td style="text-align: center;"><strong>.966</strong></td>
+<td style="text-align: center;"><strong>.958</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">random</td>
+<td style="text-align: center;"><strong>.863</strong></td>
+<td style="text-align: center;"><strong>.874</strong></td>
+<td style="text-align: center;"><strong>.980</strong></td>
+<td style="text-align: center;"><strong>.924</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">brussels</td>
+<td style="text-align: left;">brussels</td>
+<td style="text-align: center;"><strong>.839</strong></td>
+<td style="text-align: center;">.851</td>
+<td style="text-align: center;"><strong>.939</strong></td>
+<td style="text-align: center;"><strong>.893</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">boston</td>
+<td style="text-align: center;"><strong>.812</strong></td>
+<td style="text-align: center;"><strong>.777</strong></td>
+<td style="text-align: center;"><strong>.971</strong></td>
+<td style="text-align: center;"><strong>.863</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">quebec</td>
+<td style="text-align: center;"><strong>.932</strong></td>
+<td style="text-align: center;"><strong>.951</strong></td>
+<td style="text-align: center;"><strong>.975</strong></td>
+<td style="text-align: center;"><strong>.963</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">random</td>
+<td style="text-align: center;"><strong>.873</strong></td>
+<td style="text-align: center;"><strong>.892</strong></td>
+<td style="text-align: center;"><strong>.968</strong></td>
+<td style="text-align: center;"><strong>.928</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">quebec</td>
+<td style="text-align: left;">quebec</td>
+<td style="text-align: center;"><strong>.935</strong></td>
+<td style="text-align: center;"><strong>.941</strong></td>
+<td style="text-align: center;"><strong>.991</strong></td>
+<td style="text-align: center;"><strong>.965</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">brussels</td>
+<td style="text-align: center;">.781</td>
+<td style="text-align: center;">.783</td>
+<td style="text-align: center;"><strong>.962</strong></td>
+<td style="text-align: center;">.863</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">boston</td>
+<td style="text-align: center;">.731</td>
+<td style="text-align: center;">.700</td>
+<td style="text-align: center;"><strong>.981</strong></td>
+<td style="text-align: center;">.817</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">random</td>
+<td style="text-align: center;"><strong>.860</strong></td>
+<td style="text-align: center;"><strong>.861</strong></td>
+<td style="text-align: center;"><strong>.997</strong></td>
+<td style="text-align: center;"><strong>.924</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">random</td>
+<td style="text-align: left;">random</td>
+<td style="text-align: center;"><strong>.873</strong></td>
+<td style="text-align: center;"><strong>.903</strong></td>
+<td style="text-align: center;"><strong>.953</strong></td>
+<td style="text-align: center;"><strong>.927</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">brussels</td>
+<td style="text-align: center;"><strong>.754</strong></td>
+<td style="text-align: center;"><strong>.895</strong></td>
+<td style="text-align: center;"><strong>.744</strong></td>
+<td style="text-align: center;"><strong>.813</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">boston</td>
+<td style="text-align: center;"><strong>.719</strong></td>
+<td style="text-align: center;"><strong>.725</strong></td>
+<td style="text-align: center;"><strong>.873</strong></td>
+<td style="text-align: center;"><strong>.792</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">quebec</td>
+<td style="text-align: center;"><strong>.775</strong></td>
+<td style="text-align: center;"><strong>.955</strong></td>
+<td style="text-align: center;"><strong>.791</strong></td>
+<td style="text-align: center;"><strong>.865</strong></td>
+</tr>
+</tbody>
+</table>
+<p>For comparison, the results of the original study are shown in Table X.</p>
+<table class="table">
+<caption><strong>Table X:</strong> The original study’s results using a random forrest classifier <span class="citation" data-cites="kwon_disentangling_2018">(<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">Kwon, Priniski, and Chadha 2018</a>)</span></caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Train</th>
+<th style="text-align: left;">Test</th>
+<th style="text-align: left;">A</th>
+<th style="text-align: left;">P</th>
+<th style="text-align: left;">R</th>
+<th style="text-align: left;">F1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">boston</td>
+<td style="text-align: left;">boston</td>
+<td style="text-align: left;">.830</td>
+<td style="text-align: left;">.836</td>
+<td style="text-align: left;">.877</td>
+<td style="text-align: left;">.856</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">brussels</td>
+<td style="text-align: left;">.736</td>
+<td style="text-align: left;">.876</td>
+<td style="text-align: left;">.736</td>
+<td style="text-align: left;">.800</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">quebec</td>
+<td style="text-align: left;">.806</td>
+<td style="text-align: left;">.923</td>
+<td style="text-align: left;">.851</td>
+<td style="text-align: left;">.886</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">random</td>
+<td style="text-align: left;">.685</td>
+<td style="text-align: left;">.852</td>
+<td style="text-align: left;">.760</td>
+<td style="text-align: left;">.803</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">brussels</td>
+<td style="text-align: left;">brussels</td>
+<td style="text-align: left;">.828</td>
+<td style="text-align: left;">.874</td>
+<td style="text-align: left;">.889</td>
+<td style="text-align: left;">.881</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">boston</td>
+<td style="text-align: left;">.794</td>
+<td style="text-align: left;">.762</td>
+<td style="text-align: left;">.935</td>
+<td style="text-align: left;">.840</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">quebec</td>
+<td style="text-align: left;">.869</td>
+<td style="text-align: left;">.919</td>
+<td style="text-align: left;">.934</td>
+<td style="text-align: left;">.926</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">random</td>
+<td style="text-align: left;">.704</td>
+<td style="text-align: left;">.859</td>
+<td style="text-align: left;">.778</td>
+<td style="text-align: left;">.817</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">quebec</td>
+<td style="text-align: left;">quebec</td>
+<td style="text-align: left;">.889</td>
+<td style="text-align: left;">.914</td>
+<td style="text-align: left;">.966</td>
+<td style="text-align: left;">.939</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">brussels</td>
+<td style="text-align: left;">.811</td>
+<td style="text-align: left;">.827</td>
+<td style="text-align: left;">.931</td>
+<td style="text-align: left;">.876</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">boston</td>
+<td style="text-align: left;">.770</td>
+<td style="text-align: left;">.732</td>
+<td style="text-align: left;">.950</td>
+<td style="text-align: left;">.827</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">random</td>
+<td style="text-align: left;">.792</td>
+<td style="text-align: left;">.848</td>
+<td style="text-align: left;">.919</td>
+<td style="text-align: left;">.882</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">random</td>
+<td style="text-align: left;">random</td>
+<td style="text-align: left;">.743</td>
+<td style="text-align: left;">.867</td>
+<td style="text-align: left;">.827</td>
+<td style="text-align: left;">.847</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">brussels</td>
+<td style="text-align: left;">.616</td>
+<td style="text-align: left;">.751</td>
+<td style="text-align: left;">.714</td>
+<td style="text-align: left;">.732</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">boston</td>
+<td style="text-align: left;">.586</td>
+<td style="text-align: left;">.636</td>
+<td style="text-align: left;">.764</td>
+<td style="text-align: left;">.694</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">quebec</td>
+<td style="text-align: left;">.677</td>
+<td style="text-align: left;">.897</td>
+<td style="text-align: left;">.725</td>
+<td style="text-align: left;">.802</td>
+</tr>
+</tbody>
+</table>
+<p>To evaluate whether the results support our hypotheses, we have to look at four different performance measures. <span class="citation" data-cites="kwon_disentangling_2018">Kwon, Priniski, and Chadha (<a href="#ref-kwon_disentangling_2018" role="doc-biblioref">2018</a>)</span> measured Accuracy, Precision, Recall, and F1 to evaluate the performance of their model.</p>
+<p>To simplify our hypotheses, we expected improvements in all four measures by using transformers and transfer learning.</p>
+<p>As to <em>H1.A</em>, our expectation did not hold. Only Recall is improved compared to the original study, the other measures show lower values.</p>
+<p>For <em>H1.B</em>, our expectation of a consistently improved generalization performance also did not hold. However, that is only due to a slightly worse precision when training on the boston data and testing on the brussels dataset. All other measures were improved compared to the original study.</p>
+<p><em>H2.A</em> again is not fully supported by the data. The precision is slightly worse when training and testing on the brussels data.</p>
+<p>However, the findings support <em>H2.B</em>, as the generalization performance is consistently increased, across all measures and all other datasets.</p>
+<p>The findings also support <em>H3.A</em>, as the performance is consistently improved when training and testing on the quebec data.</p>
+<p>This is not the case for the generalization performance (<em>H3.B</em>). Only generalization on the random data is consistently better, most other measures are worse than in the original.</p>
+<p>Finally, <em>H4.A</em> and <em>H4.B</em> are consistently supported by the data. The performance is better across the board in this case.</p>
+</section>
+<section id="discussion" class="level1">
+<h1>Discussion</h1>
+<p>Overall, the study had mixed results. We were successful in improving performance for several train and test dataset combinations and measures. However, there is still room for improvement.</p>
+<p>There are several options one could try to further maximize the performance. Most importantly, we recommend conducting a more thorough hyperparameter search. We only tried 10 different random configurations. Given more computational resources, by trying for example 100 configurations instead, it would likely be possible to find even better hyperparameter settings which would lead to an improved performance. Another option would be to try different optimizers, as we only used PyTorch’s SGD optimizer in our study. One could also attempt to conduct stopword removal, which we did not implement.</p>
+<p>The reason we did not try these optimizations, was the limited computational resources available to us. This is also, in our opinion, the main disadvantage of training large models like the one used by us. Even though we only trained the classification head of our model, consisting of about 1500 parameters, training took considerable time. This is likely due to the millions of parameters of the BERTweet model, which results in the forward pass alone being rather complex and time as well as resource intensive.</p>
+<p>However this issue mostly only affects the training of the model. Once trained, the finished model can be used rather efficiently to make predictions for unseen cases.</p>
+<p>We provide our documented code in order to help other researchers aiming at further improving the performance of our model.</p>
+<p>In summary, we believe to have shown the potential of using transformers with transfer learning when working with text data.</p>
+<p>We believe that, given enough time and resources, transformers can help classify users as either general public or institutional by using the potential of pretrained encoders resulting in useful and informative features.</p>
+<p>Our training setup is rather simple and can be adapted by other researchers for training their own models. By that, we hope to contribute to the further improvements of automated classification of Twitter users and help future research relying on it.</p>
+</section>
+<section id="sources" class="level1">
+<h1>Sources</h1>
+<p>All the data and code used to create this report can be found at TODO</p>
+<p>#TODO: make code beautiful for github #TODO: include comments #TODO: update yml #TODO: rename yml to env.yml #TODO: create citations #TODO: format report to make it look nice #TODO: replace Table numbers</p>
+<p>#TODO: read over everything again and make it sound concise. #TODO: spell check! #TODO: in the end check if figures are numbered correctly after rendering to pdf/html!!!</p>
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-ahmed_using_2017" class="csl-entry" role="doc-biblioentry">
+Ahmed, Wasim, Peter A. Bath, and Gianluca Demartini. 2017. <span>“Using <span>Twitter</span> as a <span>Data</span> <span>Source</span>: <span>An</span> <span>Overview</span> of <span>Ethical</span>, <span>Legal</span>, and <span>Methodological</span> <span>Challenges</span>.”</span> In <em>The <span>Ethics</span> of <span>Online</span> <span>Research</span></em>, edited by Kandy Woodfield, 2:79–107. Advances in <span>Research</span> <span>Ethics</span> and <span>Integrity</span>. Emerald Publishing Limited. <a href="https://doi.org/10.1108/S2398-601820180000002004">https://doi.org/10.1108/S2398-601820180000002004</a>.
+</div>
+<div id="ref-daouadi_organization_2018" class="csl-entry" role="doc-biblioentry">
+Daouadi, Kheir Eddine, Rim Zghal Rebaï, and Ikram Amous. 2018. <span>“Organization Vs. <span>Individual</span>: <span>Twitter</span> <span>User</span> <span>Classification</span>.”</span> January.
+</div>
+<div id="ref-de_choudhury_unfolding_2012" class="csl-entry" role="doc-biblioentry">
+De Choudhury, Munmun, Nicholas Diakopoulos, and Mor Naaman. 2012. <span>“Unfolding the Event Landscape on Twitter: Classification and Exploration of User Categories.”</span> In <em>Proceedings of the <span>ACM</span> 2012 Conference on <span>Computer</span> <span>Supported</span> <span>Cooperative</span> <span>Work</span></em>, 241–44. <span>CSCW</span> ’12. New York, NY, USA: Association for Computing Machinery. <a href="https://doi.org/10.1145/2145204.2145242">https://doi.org/10.1145/2145204.2145242</a>.
+</div>
+<div id="ref-goodfellow_deep_2016" class="csl-entry" role="doc-biblioentry">
+Goodfellow, Ian, Yoshua Bengio, and Aaron Courville. 2016. <em>Deep <span>Learning</span></em>. MIT Press.
+</div>
+<div id="ref-kudugunta_deep_2018" class="csl-entry" role="doc-biblioentry">
+Kudugunta, Sneha, and Emilio Ferrara. 2018. <span>“Deep Neural Networks for Bot Detection.”</span> <em>Information Sciences</em> 467 (October): 312–22. <a href="https://doi.org/10.1016/j.ins.2018.08.019">https://doi.org/10.1016/j.ins.2018.08.019</a>.
+</div>
+<div id="ref-kwon_disentangling_2018" class="csl-entry" role="doc-biblioentry">
+Kwon, K. Hazel, J. Hunter Priniski, and Monica Chadha. 2018. <span>“Disentangling <span>User</span> <span>Samples</span>: <span>A</span> <span>Supervised</span> <span>Machine</span> <span>Learning</span> <span>Approach</span> to <span>Proxy</span>-Population <span>Mismatch</span> in <span>Twitter</span> <span>Research</span>.”</span> <em>Communication Methods and Measures</em>, February. <a href="https://www.tandfonline.com/doi/full/10.1080/19312458.2018.1430755">https://www.tandfonline.com/doi/full/10.1080/19312458.2018.1430755</a>.
+</div>
+<div id="ref-li_hybrid_2018" class="csl-entry" role="doc-biblioentry">
+Li, Liuqing, Ziqian Song, Xuan Zhang, and Edward A. Fox. 2018. <span>“A <span>Hybrid</span> <span>Model</span> for <span>Role</span>-Related <span>User</span> <span>Classification</span> on <span>Twitter</span>.”</span> arXiv. <a href="https://doi.org/10.48550/arXiv.1811.10202">https://doi.org/10.48550/arXiv.1811.10202</a>.
+</div>
+<div id="ref-mccorriston_organizations_2015" class="csl-entry" role="doc-biblioentry">
+McCorriston, James, David Jurgens, and Derek Ruths. 2015. <span>“Organizations <span>Are</span> <span>Users</span> <span>Too</span>: <span>Characterizing</span> and <span>Detecting</span> the <span>Presence</span> of <span>Organizations</span> on <span>Twitter</span>.”</span> <em>Proceedings of the International AAAI Conference on Web and Social Media</em> 9 (1): 650–53. <a href="https://doi.org/10.1609/icwsm.v9i1.14672">https://doi.org/10.1609/icwsm.v9i1.14672</a>.
+</div>
+<div id="ref-nguyen_bertweet_2020" class="csl-entry" role="doc-biblioentry">
+Nguyen, Dat Quoc, Thanh Vu, and Anh Tuan Nguyen. 2020. <span>“<span>BERTweet</span>: <span>A</span> Pre-Trained Language Model for <span>English</span> <span>Tweets</span>.”</span> In <em>Proceedings of the 2020 <span>Conference</span> on <span>Empirical</span> <span>Methods</span> in <span>Natural</span> <span>Language</span> <span>Processing</span>: <span>System</span> <span>Demonstrations</span></em>, 9–14.
+</div>
+<div id="ref-vashisth_gender_2020" class="csl-entry" role="doc-biblioentry">
+Vashisth, Pradeep, and Kevin Meehan. 2020. <span>“Gender <span>Classification</span> Using <span>Twitter</span> <span>Text</span> <span>Data</span>.”</span> In <em>2020 31st <span>Irish</span> <span>Signals</span> and <span>Systems</span> <span>Conference</span> (<span>ISSC</span>)</em>, 1–6. <a href="https://doi.org/10.1109/ISSC49989.2020.9180161">https://doi.org/10.1109/ISSC49989.2020.9180161</a>.
+</div>
+<div id="ref-wankmuller_introduction_2022" class="csl-entry" role="doc-biblioentry">
+Wankmüller, Sandra. 2022. <span>“Introduction to <span>Neural</span> <span>Transfer</span> <span>Learning</span> with <span>Transformers</span> for <span>Social</span> <span>Science</span> <span>Text</span> <span>Analysis</span>.”</span> arXiv. <a href="https://doi.org/10.48550/arXiv.2102.02111">https://doi.org/10.48550/arXiv.2102.02111</a>.
+</div>
+<div id="ref-yan_classifying_2013" class="csl-entry" role="doc-biblioentry">
+Yan, Liang, Qiang Ma, and Masatoshi Yoshikawa. 2013. <span>“Classifying <span>Twitter</span> <span>Users</span> <span>Based</span> on <span>User</span> <span>Profile</span> and <span>Followers</span> <span>Distribution</span>.”</span> In <em>Database and <span>Expert</span> <span>Systems</span> <span>Applications</span></em>, edited by Hendrik Decker, Lenka Lhotská, Sebastian Link, Josef Basl, and A. Min Tjoa, 396–403. Lecture <span>Notes</span> in <span>Computer</span> <span>Science</span>. Berlin, Heidelberg: Springer. <a href="https://doi.org/10.1007/978-3-642-40285-2_34">https://doi.org/10.1007/978-3-642-40285-2_34</a>.
+</div>
+</div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

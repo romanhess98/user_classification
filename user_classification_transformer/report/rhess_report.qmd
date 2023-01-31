@@ -1,5 +1,7 @@
 ---
 title: "Improving the Classification of General Public and Institutional Twitter Users with Transformers."
+author: Roman Heß
+date: 2023-01-31
 bibliography: references.bib
 format:
   html:
@@ -7,16 +9,7 @@ format:
 jupyter: python3
 ---
 
-
-# Title:
-
-
-# Introduction: brief explanation of the topic & its relevance plus the methodological approach
-
--	When using twitter data for research, important to differentiate between individual and organizational accounts
--	Present different definitions of individual and organizational
--	Present reasons why differentiating is important
-
+# Introduction
 
 Twitter is an interesting data source for computational communication scientists.
 The Twitter API makes it comparably easy to obtain large amounts of text data.
@@ -50,55 +43,19 @@ Overall, for the above mentioned reasons, there is a need for reliable classific
 Several techniques for this purpose have already been introduced. They will be presented in the next section.
 
 
-# Literature review: (short) review of existing literature incl. derivation and formulation of hypotheses/research questions
+# Literature Review
 
-- Present different existing approaches for differentiating between individual and organizational accounts
-
-- Present problem: even though many of them use text data, no transformer models used! No dense text embeddings.
-
-- Present paper, stressing the advantages of transformer models in social sciences text analysis
-
-- Present hypotheses:
-
-    - Transformers achieve better performance within the datasets
-    - Transformers achieve better performances across datasets (generalization)
-
-
-
-- TWIROLE:
-    - simple text feature
-    - picture etc additionally
-
-    - name, description, Twitter Follower-Friend Ratio, profile image, tweet
-    - hybrid classifier
-    - text features are rather simple (e.g. frequency based)
-    - profile images: Convolutional Neural Network
+## Existing Classifiers
 
 @li_hybrid_2018 introduced TWIROLE, which uses Twitter users' name, description, the Follower-Friend Ratio, profile image and tweets as features for a hybrid classifier.
 The text features are rather simple and frequency based in this case.
-
-
-
-- Mc Corriston et al. (cite)
-    - post content features, stylistic features, structural and behavioral features.
-    - text features mostly frequency based, otherwise numerical features, fed into a support vector machine
 
 @mccorriston_organizations_2015 used post content, stylistic as well as structural and behavioral features for their classifier.
 The text features they implemented were mostly frequency-based, the other features were numerical.
 All features were then fed into a support vector machine for classification
 
-- Kheir et al (cite)
-    - did not ue textual features at all, solely statistical-based on features such as number of followers, liked tweets, posts per day etc.
-
 @daouadi_organization_2018 did not use textual features at all.
 Their features were solely statistical-based and included measures like the number of followers, liked tweets, posts per day etc.
-
-
-- Kwon et al. (cite)
-    - solely based on twitter profile descriptions
-    - used the sci-kit learn package in python. Their representation of each profile text only considered the 500 most frequent terms
-    - Thus the representation of each profile text was a 500 dimensional sparse vector containing the raw frequencies for the top 500 words.
-    - Then a random forrest classifier was used to separate general public profiles from institutional accounts.
 
 @kwon_disentangling_2018 trained a classifier solely based on twitter profile descriptions.
 They used the sci-kit learn package in python and their representations of each profile text only considered the 500 most frequent terms in the data.
@@ -118,7 +75,7 @@ They can then be fed into a smaller model which is then trained on the actual ta
 
 This can improve the prediction performance on different NLP tasks [@wankmuller_introduction_2022].
 
-## Goal of the study:
+## Study Goal
 
 We believe that this also holds for the task of Twitter user classification into general public and institutional users.
 When text data is available, it is reasonable to expect that the usage of pretrained word embeddings and encoders can leverage performance.
@@ -155,13 +112,7 @@ _H4.A_: a better performance on the *random* test set, when trained on the *rand
 _H4.B_: a better performance on all other test sets, when trained on the *random* training set than in the original study.
 
 
-# Method: description of the data set (origins & structure of the data, sampling approach, data preprocessing) and the analysis logic (incl. detailed explanation of used software packages & functions/models)
-
-- describe datasets
-- describe preprocessing
-- describe tokenization
-- describe RoBERTa model
-- describe training setup
+# Method
 
 ## Data
 The dataset used by @kwon_disentangling_2018 consisted of three variables.
@@ -176,7 +127,6 @@ All annotations carried the label 1, and there were no negative cases.
 Thus, we decided, to remove the mesa data from our analysis.
 This sparked doubt about the reliability of the other datasets as well.
 However, for the other sources, the distribution of positive and negative cases matched the description of the authors making them seem reliable enough for us to analyze.
-
 
 
 ## Preprocessing
@@ -218,7 +168,6 @@ History geek. Cat person. Chocolate eater. Apparently a snowflake. #TheResistanc
 
 into the following tokens:
 
-
 'Femin@@', 'ist@@', '.', 'Proud', 'liber@@', 'al.', 'Pro-@@', 'love@@', '.', 'Colin', 'Morgan', 'fan@@', '.', 'Book',
 'lo@@', 'ver@@', '.', 'History', 'gee@@', 'k@@', '.', 'Cat', 'person@@', '.', 'Chocolate', 'ea@@', 'ter@@', '.', 'Apparently',
  'a', 'snow@@', 'fla@@', 'ke@@', '.', '#TheResistance', '#ImpeachTrump'.
@@ -231,7 +180,6 @@ The largest length (meaning the number of tokens) the model can take is 128.
 The distribution of the number of tokens per profile description in all five datasets is shown in Figure 1.
 
 ![**Figure 1**: Distribution over token lengths in the full dataset](figs/token_lengths.png)
-
 
 Using hyperparameter optimization we tried three different configurations of 90, 100 and 128 as the maximum sequence length.
 Any profile description longer than this would be cut at the maximum length and every description shorter than this would be filled up to this maximum length using a special padding token.
@@ -262,8 +210,6 @@ The hyperparameters used and the corresponding search spaces are shown in Table 
 
 : The parameters and their corresponding search spaces used in the HPO
 
-
-
 For hyperparameter optimization, the *HyperbandPruner* from the optuna library was used, taking the validation loss as the evaluation criterion.
 Due to computational limitations, the search went on for 10 trials and 40 epochs per dataset (*boston*, *brussels*, *mesa*, *quebec*, and *random*).
 A more thorough investigation over more epochs and more trials would likely result in a more optimal configuration than the one we found.
@@ -280,7 +226,6 @@ The results of the hyperparameter search are shown in Table X.
 : The optimal hyperparameters based on the HPO
 
 
-
 Once the best hyperparameter configuration was identified, within each dataset, a model was trained on the training data and tested on the test data.
 The maximum number of epochs for training was 500.
 Also, an early stopping mechanism had been implemented.
@@ -291,14 +236,7 @@ Our evaluation criteria for the test set were the same as in the original study.
 We measures accuracy, precision, recall, and F1 score.
 The results of the study are presented in the next section.
 
-
-
-
-
-
-# Results: testing of hypotheses/answering of research questions (incl. data visualizations where applicable)
-
-- present results (compared to original authors' results)
+# Results
 
 The results of our study are shown Table X. 
 
@@ -367,20 +305,7 @@ This is not the case for the generalization performance (_H3.B_). Only generaliz
 Finally, _H4.A_ and _H4.B_ are consistently supported by the data. The performance is better across the board in this case. 
 
 
-
-# Discussion: summary and interpretation of results, limitations of the methodological approach, outlook
-
-- why did this work? what does it mean
-- why did it not work?
-- what could be improved?
-- takeaway also for other classifiers incorporating more information
-
-    - more thorough hyperparameter search
-    - retrain top layers of bert model
-    - try different tokenizers
-    - try different optimizers
-    - try stopword removal
-    -
+# Discussion
 
 Overall, the study had mixed results. We were successful in improving performance for several train and test dataset combinations and measures. However, there is still room for improvement. 
 
